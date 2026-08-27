@@ -115,6 +115,25 @@ class RecoveryService:
         decision_id = f"dec_{uuid.uuid4().hex[:12]}"
         now_ts = datetime.now(timezone.utc).isoformat()
 
+        # 6. Persist historical decision record and initialize case in DECIDED state
+        from api.services.operations_service import operations_service
+        operations_service.persist_decision(
+            decision_id=decision_id,
+            case_id=case.case_id,
+            customer_id=case.customer_id,
+            amount_paise=case.amount_paise,
+            recommended_action=decision.selected_action,
+            recommended_action_recovery_probability=sel_val.predicted_probability,
+            expected_gross_recovery_paise=sel_val.expected_gross_paise,
+            action_cost_paise=sel_val.action_cost_paise,
+            expected_net_recovery_paise=sel_val.expected_net_paise,
+            decision_margin_paise=decision.decision_margin_paise,
+            explanation=explanation,
+            model_family=self.model_family,
+            feature_version="sim_v1_canonical_24d",
+            created_at=now_ts,
+        )
+
         return DecisionResponse(
             decision_id=decision_id,
             case_id=case.case_id,

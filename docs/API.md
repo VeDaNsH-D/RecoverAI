@@ -1,6 +1,6 @@
-# RecoverAI Merchant-Facing Recovery Decision API Reference
+# RecoverAI Merchant-Facing Recovery Decision & Operations API Reference
 
-The RecoverAI API exposes real-time, economically bounded payment recovery decisioning as a service for merchants, payment gateways, and subscription platforms.
+The RecoverAI API exposes real-time, economically bounded payment recovery decisioning and operations as a service for merchants, payment gateways, and subscription platforms.
 
 ---
 
@@ -10,7 +10,10 @@ The RecoverAI API exposes real-time, economically bounded payment recovery decis
 +-------------------------------------------------------------------------------+
 |                           MERCHANT BACKEND / CLIENT                           |
 |                                                                               |
-|  POST /api/v1/decisions (PaymentCaseRequest)                                  |
+|  1. POST /api/v1/decisions (PaymentCaseRequest)                               |
+|  2. POST /api/v1/recovery/actions (ActionExecutionRequest)                    |
+|  3. POST /api/v1/recovery/outcomes (OutcomeEventRequest)                      |
+|  4. GET  /api/v1/recovery/summary (Analytics & Operational Ledger)            |
 +---------------------------------------+---------------------------------------+
                                         |
                                         v
@@ -18,26 +21,20 @@ The RecoverAI API exposes real-time, economically bounded payment recovery decis
 |                       RECOVERAI API LAYER (FastAPI)                           |
 |                                                                               |
 |  - Closed/Strict Schema Validation (extra='forbid')                           |
+|  - State Machine Enforcement & Idempotency Key Tracking                       |
 |  - Separates Metadata (case_id, customer_id) from ML Observables              |
 +---------------------------------------+---------------------------------------+
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|                       RECOVERY DECISION SERVICE                               |
+|                       RECOVERY DECISION & OPERATIONS SERVICES                 |
 |                                                                               |
 |  - Ingests observable PaymentCase                                             |
 |  - Invokes RecoverAIInferenceEngine (FeatureExtractor + Champion Models)      |
 |  - Computes Expected Net Recovery in exact integer paise                      |
+|  - Dispatches action execution to provider mocks (retry, plink, ops, etc.)    |
 |  - Enforces Hard Safety Guardrails (Max Retries, Micro-Ticket Protection)     |
-|  - Formulates Merchant-Friendly Explanation                                   |
-+---------------------------------------+---------------------------------------+
-                                        |
-                                        v
-+-------------------------------------------------------------------------------+
-|                      MERCHANT DECISION RESPONSE (JSON)                        |
-|                                                                               |
-|  - Recommended Action, Expected Net Value (INR & Paise), Decision Margin      |
-|  - Full Candidate Actions Comparison Ledger & Safety Status                   |
+|  - Records observed settlement events atomically in SQLite                    |
 +-------------------------------------------------------------------------------+
 ```
 
@@ -59,7 +56,6 @@ The RecoverAI API exposes real-time, economically bounded payment recovery decis
     "timestamp": "2026-08-27T09:00:54.205838+00:00"
   }
   ```
-- **Degraded Status (`model_status: "model_unavailable"`)**: Returned if the pre-trained champion model artifact cannot be found on disk.
 
 ---
 
@@ -95,8 +91,8 @@ The RecoverAI API exposes real-time, economically bounded payment recovery decis
 
 ### 2.3 Create Recovery Decision
 - **Endpoint**: `POST /api/v1/decisions`
-- **Description**: Evaluates an observable failed payment incident and produces the optimal bounded action recommendation with full auditable economics.
-- **Request Schema (`PaymentCaseRequest` - Strict Closed Schema `extra='forbid'`):**
+- **Description**: Evaluates an observable failed payment incident and produces the optimal bounded action recommendation with full auditable economics. Atomically persists the decision and establishes the case in `DECIDED` state.
+- **Request Schema (`PaymentCaseRequest` - Closed Schema `extra='forbid'`):**
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
@@ -229,37 +225,159 @@ curl -X POST http://localhost:8000/api/v1/decisions \
 
 ---
 
-## 3. Safety Guardrails & Policy Constraints
+### 2.4 Execute Recovery Action
+- **Endpoint**: `POST /api/v1/recovery/actions`
+- **Description**: Dispatches the recommended recovery action to the provider layer. Enforces strict idempotency.
+- **Request Schema (`ActionExecutionRequest` - Closed Schema `extra='forbid'`):**
 
-1. **`NO_ACTION` Safety Invariant**: `NO_ACTION` is always available across all payment requests. If all active interventions yield negative expected net value ($\mathbb{E}[\text{Net}](a) < 0$), the engine selects `NO_ACTION`.
-2. **Retry Exhaustion Protection**: If `retry_count >= 2`, `RETRY` is disqualified (`allowed = false`, reason: `max_retries_exceeded: retry_count >= 2`).
-3. **Micro-Ticket Protection**: If `amount_paise < 20,000` (₹200), `ESCALATE` is disqualified (`allowed = false`, reason: `micro_ticket_protection: amount < 20000 paise`) to prevent spending ₹50 fees on low-ticket items.
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `decision_id` | `string` | **Required** | Preceding decision identifier |
+| `action` | `string` | **Required** | Action to execute (must match recommended action) |
+| `idempotency_key` | `string` | **Required** | Merchant unique idempotency key ($\ge 8$ chars) |
+| `merchant_reference` | `string` | Optional | Merchant transaction/audit reference |
+
+#### Sample Request:
+```bash
+curl -X POST http://localhost:8000/api/v1/recovery/actions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "decision_id": "dec_04495b4e5f1d",
+    "action": "retry",
+    "idempotency_key": "idemp_order_991823_v1"
+  }'
+```
+
+#### Sample Response `200 OK`:
+```json
+{
+  "action_id": "act_d63b4a530e75",
+  "decision_id": "dec_04495b4e5f1d",
+  "case_id": "case_live_smoke_001",
+  "action": "retry",
+  "status": "EXECUTED",
+  "provider_reference": "gw_retry_0e0398731c87",
+  "cost_paise": 200,
+  "cost_inr": 2.0,
+  "error_message": null,
+  "executed_at": "2026-08-27T09:23:51.120934+00:00",
+  "idempotency_key": "idemp_order_991823_v1"
+}
+```
 
 ---
 
-## 4. Model Loading & Lifecycle Safety
-
-- **Startup Loading**: The API loads the pre-trained champion model artifact (`models/champion_recovery_model.pkl`) once on application startup.
-- **No Per-Request Retraining**: Zero training overhead during API requests.
-- **Model Artifact Generation**:
-  ```bash
-  python scripts/save_champion_model.py
-  ```
-  Generates `models/champion_recovery_model.pkl` (33.80 KB).
-- **Graceful Degradation**: If the model artifact is missing or corrupted, `/health` reports `status: "degraded", model_status: "model_unavailable"`, and `/api/v1/decisions` returns `503 Service Unavailable`.
+### 2.5 Get Action Details
+- **Endpoint**: `GET /api/v1/recovery/actions/{action_id}`
+- **Description**: Retrieves the status and provider reference of an executed action record.
 
 ---
 
-## 5. Local Development Commands
+### 2.6 Record Observed Outcome Event
+- **Endpoint**: `POST /api/v1/recovery/outcomes`
+- **Description**: Records an observed payment settlement or failure from a webhook or merchant ledger. Transitions the case to a terminal state (`RECOVERED` or `NOT_RECOVERED`).
+- **Request Schema (`OutcomeEventRequest` - Closed Schema `extra='forbid'`):**
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `case_id` | `string` | **Required** | Associated case identifier |
+| `action_id` | `string` | **Required** | Associated action execution ID |
+| `decision_id` | `string` | **Required** | Associated decision ID |
+| `outcome_status` | `string` | **Required** | `"recovered"` or `"not_recovered"` (NO `"failed"`!) |
+| `recovered_amount_paise` | `integer` | **Required** | Amount recovered in integer paise ($> 0$ if recovered, $0$ if not) |
+| `provider_reference` | `string` | Optional | External provider payment/settlement ID |
+| `metadata` | `object` | Optional | Arbitrary key-value settlement metadata |
+| `event_timestamp` | `string` | Optional | ISO 8601 timestamp of outcome |
+
+#### Sample Request:
+```bash
+curl -X POST http://localhost:8000/api/v1/recovery/outcomes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "case_id": "case_live_smoke_001",
+    "action_id": "act_d63b4a530e75",
+    "decision_id": "dec_04495b4e5f1d",
+    "outcome_status": "recovered",
+    "recovered_amount_paise": 375000,
+    "provider_reference": "pay_settlement_998124"
+  }'
+```
+
+#### Sample Response `200 OK`:
+```json
+{
+  "event_id": "evt_75c4bcdc924b",
+  "case_id": "case_live_smoke_001",
+  "action_id": "act_d63b4a530e75",
+  "decision_id": "dec_04495b4e5f1d",
+  "outcome_status": "recovered",
+  "recovered_amount_paise": 375000,
+  "recovered_amount_inr": 3750.0,
+  "event_timestamp": "2026-08-27T09:23:51.150291+00:00",
+  "created_at": "2026-08-27T09:23:51.150291+00:00"
+}
+```
+
+---
+
+### 2.7 Get Operational Recovery Summary
+- **Endpoint**: `GET /api/v1/recovery/summary`
+- **Description**: Returns observational operational and financial metrics across all persisted recovery cases.
+- **Sample Response `200 OK`**:
+```json
+{
+  "total_cases": 45,
+  "decisions_made": 45,
+  "actions_executed": 38,
+  "execution_failures": 2,
+  "recovered_cases": 28,
+  "not_recovered_cases": 10,
+  "recovery_rate": 0.7368,
+  "gross_recovered_paise": 9850000,
+  "gross_recovered_inr": 98500.0,
+  "total_action_cost_paise": 48200,
+  "total_action_cost_inr": 482.0,
+  "net_recovered_paise": 9801800,
+  "net_recovered_inr": 98018.0,
+  "action_distribution": {
+    "retry": 18,
+    "payment_link": 14,
+    "reminder": 4,
+    "escalate": 2
+  },
+  "recovery_by_action": {
+    "retry": {
+      "action": "retry",
+      "executed_count": 18,
+      "recovered_count": 14,
+      "recovery_rate": 0.7778,
+      "gross_recovered_paise": 4500000,
+      "gross_recovered_inr": 45000.0,
+      "action_cost_paise": 3600,
+      "action_cost_inr": 36.0,
+      "net_recovered_paise": 4496400,
+      "net_recovered_inr": 44964.0
+    }
+  },
+  "execution_failures_by_action": {
+    "payment_link": 2
+  },
+  "timestamp": "2026-08-27T09:25:00.000000+00:00"
+}
+```
+
+---
+
+## 3. Local Development Commands
 
 ### Start API Server:
 ```bash
 uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Run Live HTTP Smoke Test:
+### Run Live Operations Smoke Test:
 ```bash
-python scripts/smoke_test_api.py
+python scripts/smoke_test_operations.py
 ```
 
 ### Run Full Test Suite:

@@ -5,12 +5,13 @@ Zero ground-truth or latent variables can enter the API contract.
 """
 
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
 from simulator.config import FailureType, PaymentMethod, RecoveryAction
 from simulator.schemas.case import PaymentCase
+from recovery.models import ActionExecutionStatus, OutcomeStatus
 
 
 class PaymentCaseRequest(BaseModel):
@@ -76,9 +77,7 @@ class PaymentCaseRequest(BaseModel):
 
 
 class CandidateActionResponse(BaseModel):
-    """
-    Detailed economic evaluation and safety audit for a single candidate action.
-    """
+    """Detailed economic evaluation and safety audit for a single candidate action."""
     model_config = ConfigDict(frozen=True)
 
     action: RecoveryAction = Field(description="Candidate recovery action")
@@ -94,9 +93,7 @@ class CandidateActionResponse(BaseModel):
 
 
 class SafetyStatusResponse(BaseModel):
-    """
-    Safety guardrail audit status for a recovery decision.
-    """
+    """Safety guardrail audit status for a recovery decision."""
     model_config = ConfigDict(frozen=True)
 
     guardrails_applied: List[str] = Field(description="List of active policy rules evaluated")
@@ -105,9 +102,7 @@ class SafetyStatusResponse(BaseModel):
 
 
 class DecisionResponse(BaseModel):
-    """
-    Merchant-facing recovery decision response.
-    """
+    """Merchant-facing recovery decision response."""
     model_config = ConfigDict(frozen=True)
 
     decision_id: str = Field(description="Unique identifier for the decision record")
@@ -131,9 +126,7 @@ class DecisionResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """
-    Service health and model readiness response.
-    """
+    """Service health and model readiness response."""
     model_config = ConfigDict(frozen=True)
 
     status: str = Field(description="Overall service status (healthy / degraded)")
@@ -145,10 +138,7 @@ class HealthResponse(BaseModel):
 
 
 class ModelInfoResponse(BaseModel):
-    """
-    Product-safe model metadata and capability registry.
-    Excludes all hidden ground-truth, latent variables, and training labels.
-    """
+    """Product-safe model metadata and capability registry."""
     model_config = ConfigDict(frozen=True)
 
     model_family: str = Field(description="Champion model architecture family")
@@ -159,6 +149,108 @@ class ModelInfoResponse(BaseModel):
     active_safety_guardrails: List[str] = Field(description="Active policy guardrails enforced during decisioning")
     training_status: str = Field(description="Model lifecycle status (e.g. trained_and_frozen)")
     disclaimer: str = Field(description="Scientific boundary disclaimer regarding observable-only inference")
+
+
+class ActionExecutionRequest(BaseModel):
+    """
+    Request to execute an action selected by RecoverAI Decision Engine.
+    GUARANTEE: Closed schema (extra='forbid') rejecting any unauthorized extra fields.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    decision_id: str = Field(description="Reference ID of the preceding RecoverAI decision")
+    action: RecoveryAction = Field(description="Recovery action to execute (must match recommended action)")
+    idempotency_key: str = Field(min_length=8, description="Merchant unique idempotency key for safe retries")
+    merchant_reference: Optional[str] = Field(default=None, description="Optional merchant system reference")
+    force_failure: bool = Field(default=False, description="Flag for testing mock provider technical failures")
+
+
+class ActionExecutionResponse(BaseModel):
+    """Response confirming action execution dispatch."""
+    model_config = ConfigDict(frozen=True)
+
+    action_id: str = Field(description="Unique identifier for the action execution record")
+    decision_id: str = Field(description="Associated decision ID")
+    case_id: str = Field(description="Associated payment case ID")
+    action: RecoveryAction = Field(description="Action executed")
+    status: ActionExecutionStatus = Field(description="Execution status (EXECUTED or FAILED)")
+    provider_reference: str = Field(description="Reference ID returned by downstream provider/mock")
+    cost_paise: int = Field(ge=0, description="Actual action operational cost in integer paise")
+    cost_inr: float = Field(ge=0.0, description="Actual action cost in INR")
+    error_message: Optional[str] = Field(default=None, description="Error detail if execution failed")
+    executed_at: str = Field(description="ISO 8601 execution timestamp")
+    idempotency_key: str = Field(description="Idempotency key associated with this execution")
+
+
+class OutcomeEventRequest(BaseModel):
+    """
+    Observed operational outcome event reporting payment resolution.
+    GUARANTEE: Closed schema (extra='forbid').
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(description="Associated payment case ID")
+    action_id: str = Field(description="Associated action execution ID")
+    decision_id: str = Field(description="Associated decision ID")
+    outcome_status: OutcomeStatus = Field(description="Operational outcome status ('recovered' or 'not_recovered')")
+    recovered_amount_paise: int = Field(ge=0, description="Amount recovered in integer paise (0 if not recovered)")
+    provider_reference: Optional[str] = Field(default=None, description="External provider transaction reference")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary observational event metadata")
+    event_timestamp: Optional[str] = Field(default=None, description="ISO 8601 timestamp when outcome occurred")
+
+
+class OutcomeEventResponse(BaseModel):
+    """Confirmation of recorded operational outcome event."""
+    model_config = ConfigDict(frozen=True)
+
+    event_id: str = Field(description="Unique identifier for the outcome event record")
+    case_id: str = Field(description="Associated payment case ID")
+    action_id: str = Field(description="Associated action ID")
+    decision_id: str = Field(description="Associated decision ID")
+    outcome_status: OutcomeStatus = Field(description="Operational outcome status ('recovered' or 'not_recovered')")
+    recovered_amount_paise: int = Field(description="Recovered amount in integer paise")
+    recovered_amount_inr: float = Field(description="Recovered amount in INR")
+    event_timestamp: str = Field(description="ISO 8601 timestamp of outcome event")
+    created_at: str = Field(description="ISO 8601 recording timestamp")
+
+
+class ActionRecoveryMetric(BaseModel):
+    """Operational summary metrics for a specific recovery action."""
+    model_config = ConfigDict(frozen=True)
+
+    action: str
+    executed_count: int
+    recovered_count: int
+    recovery_rate: float
+    gross_recovered_paise: int
+    gross_recovered_inr: float
+    action_cost_paise: int
+    action_cost_inr: float
+    net_recovered_paise: int
+    net_recovered_inr: float
+
+
+class RecoverySummaryResponse(BaseModel):
+    """Merchant operational summary analytics response."""
+    model_config = ConfigDict(frozen=True)
+
+    total_cases: int
+    decisions_made: int
+    actions_executed: int
+    execution_failures: int
+    recovered_cases: int
+    not_recovered_cases: int
+    recovery_rate: float
+    gross_recovered_paise: int
+    gross_recovered_inr: float
+    total_action_cost_paise: int
+    total_action_cost_inr: float
+    net_recovered_paise: int
+    net_recovered_inr: float
+    action_distribution: Dict[str, int]
+    recovery_by_action: Dict[str, ActionRecoveryMetric]
+    execution_failures_by_action: Dict[str, int]
+    timestamp: str
 
 
 class ErrorResponse(BaseModel):

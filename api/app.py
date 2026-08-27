@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.config import settings
-from api.routes import health, model_info, decisions
+from api.routes import health, model_info, decisions, actions, outcomes, summary
 from api.services.recovery_service import recovery_service
 
 logger = logging.getLogger("recoverai.api")
@@ -63,6 +63,9 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix="/api/v1")
     app.include_router(model_info.router, prefix="/api/v1")
     app.include_router(decisions.router, prefix="/api/v1")
+    app.include_router(actions.router, prefix="/api/v1")
+    app.include_router(outcomes.router, prefix="/api/v1")
+    app.include_router(summary.router, prefix="/api/v1")
 
     # Top-level health check convenience alias
     app.include_router(health.router, prefix="")
