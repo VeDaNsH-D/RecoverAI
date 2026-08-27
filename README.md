@@ -69,10 +69,10 @@ Standard industry recovery approaches rely on crude heuristics:
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|                       6. AUDITABLE DECISION & EXPLANATION                     |
+|                       6. MERCHANT API & AUDITABLE DECISION                    |
 |                                                                               |
-|  - Selected Action, Expected Net Value (INR & Paise), Decision Margin         |
-|  - Full Action Economics & Safety Audit Ledger                                |
+|  - POST /api/v1/decisions -> Recommended Action, Expected Net Value, Margins  |
+|  - Full Action Economics & Safety Audit Ledger (docs/API.md)                  |
 +-------------------------------------------------------------------------------+
 ```
 
@@ -102,23 +102,39 @@ Evaluated under **Common Random Numbers (CRN)** on the frozen `sim_v1` held-out 
 
 ## 4. Quickstart & CLI Commands
 
-### A. Run Interactive Demo
+### A. Run Merchant API Server
+Start the production-ready FastAPI recovery decision service:
+```bash
+uvicorn api.app:app --host 0.0.0.0 --port 8000
+```
+- Interactive API Docs: `http://localhost:8000/docs`
+- Health Endpoint: `GET /api/v1/health`
+- Model Metadata: `GET /api/v1/model-info`
+- Decision Endpoint: `POST /api/v1/decisions`
+- Comprehensive Documentation: [`docs/API.md`](docs/API.md)
+
+### B. Run Live HTTP Smoke Test
+```bash
+python scripts/smoke_test_api.py
+```
+
+### C. Run Interactive Demo CLI
 Demonstrates real-time observable inference and auditable decision reports across 8 failure scenarios:
 ```bash
 python scripts/demo.py
 ```
 
-### B. Run Full Test Suite (51 Tests)
+### D. Run Full Test Suite (60 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
 
-### C. Run Validation Decision Diagnostics
+### E. Run Validation Decision Diagnostics
 ```bash
 python scripts/diagnose_decision_gap.py
 ```
 
-### D. Run Final Benchmark Evaluation on Held-Out Test Split
+### F. Run Final Benchmark Evaluation on Held-Out Test Split
 ```bash
 python scripts/run_final_test_evaluation.py
 ```
@@ -129,9 +145,16 @@ python scripts/run_final_test_evaluation.py
 
 ```
 recoverai/
+├── api/                        # Merchant-Facing FastAPI Recovery Service
+│   ├── app.py                  # App factory, lifespan, CORS, and routing
+│   ├── config.py               # Environment configuration settings
+│   ├── schemas.py              # Strict closed Pydantic request/response contracts
+│   ├── routes/                 # API endpoint routers (/health, /model-info, /decisions)
+│   └── services/               # RecoveryDecisionService & ExplanationService
 ├── data/
 │   └── sim_v1/                 # Frozen benchmark dataset (Train: 7k, Val: 1.5k, Test: 1.5k)
 ├── docs/
+│   ├── API.md                  # Complete Merchant API reference & cURL examples
 │   ├── ARCHITECTURE.md         # Layer decoupling & observable boundary diagrams
 │   ├── CAUSAL_MODEL.md         # Structural logit model & potential outcomes
 │   ├── DECISIONS.md            # Architecture Decision Records (ADRs 001-008)
@@ -148,6 +171,8 @@ recoverai/
 │       ├── logistic_model.py   # Calibrated Logistic Regression model
 │       ├── gbm_model.py        # Calibrated HistGradientBoosting model
 │       └── bundle.py           # MultiActionRecoveryModel coordinator
+├── models/
+│   └── champion_recovery_model.pkl # Pre-trained champion model artifact (33.80 KB)
 ├── reports/
 │   ├── final_test_evaluation.json  # Reproducible test benchmark results
 │   └── final_test_evaluation.md    # Markdown benchmark report
@@ -155,9 +180,11 @@ recoverai/
 │   ├── demo.py                 # Interactive scenario demonstration CLI
 │   ├── diagnose_decision_gap.py# Decision gap diagnostic & confusion matrices
 │   ├── run_final_test_evaluation.py # Test split evaluation runner
+│   ├── save_champion_model.py  # Export pre-trained champion model artifact
+│   ├── smoke_test_api.py       # Live HTTP integration smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 51 unit, integration, and security tests
+└── tests/                      # 60 unit, integration, security, and API tests
 ```
 
 ---
@@ -165,6 +192,6 @@ recoverai/
 ## 6. Core Scientific & Engineering Principles
 
 1. **Exact Financial Calculations (Integer Paise)**: All internal monetary quantities (`amount_paise`, `recovered_amount_paise`, `intervention_cost_paise`, `expected_net_paise`) are strictly 64-bit integers.
-2. **Zero Ground-Truth Leakage Guarantee**: The inference path ingests only observable `PaymentCase` fields. Any unauthorized token (`latent_intent`, `latent_funds`, `optimal_action`, `actual_outcome`) immediately raises a `DataLeakageError`.
+2. **Zero Ground-Truth Leakage Guarantee**: The API and inference path ingest only observable `PaymentCase` fields. Any unauthorized token (`latent_intent`, `latent_funds`, `optimal_action`, `actual_outcome`) immediately raises a `DataLeakageError` or `422 Unprocessable Entity`.
 3. **Common Random Numbers (CRN)**: Policies are evaluated against identical realizations of potential outcomes $Y(a)$, guaranteeing that differences in net recovery represent true decision quality rather than stochastic noise.
 4. **Customer-Level Split Partitioning**: Train (1,400 customers), Validation (300 customers), and Test (300 customers) are 100% disjoint at the customer identity level.
