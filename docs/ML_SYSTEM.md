@@ -59,80 +59,100 @@ These probabilities feed into the **Expected Net Value Decision Engine**, which 
 
 ---
 
-## 2. Modeling Formulation: Action-Conditional Potential-Outcome Models
+## 2. Expected Net Value Formulation & Authoritative Action Costs
 
-### Distinction from Observational Causal Inference
-In observational payment datasets, researchers must model treatment propensity scores $P(A \mid X)$ because treatment assignments are selective and confounded.
+### Mathematical Formulation
+For each candidate action $a \in \mathcal{A}$ on case $i$:
+1. **Predicted Recovery Probability**: $\hat{P}_i(a) = \hat{P}(Y_i(a) = 1 \mid X_i) \in [0.0, 1.0]$.
+2. **Expected Gross Revenue (Paise)**:
+   $$\hat{\mathbb{E}}[\text{Gross}_i(a)] = \lfloor \hat{P}_i(a) \times \text{amount\_paise}_i \rfloor$$
+3. **Expected Net Revenue (Paise)**:
+   $$\hat{\mathbb{E}}[\text{Net}_i(a)] = \hat{\mathbb{E}}[\text{Gross}_i(a)] - \text{ACTION\_COSTS\_PAISE}[a]$$
+4. **Optimal Bounded Selection**:
+   $$a_i^* = \arg\max_{a \in \mathcal{A}_{\text{allowed}}(i)} \hat{\mathbb{E}}[\text{Net}_i(a)]$$
+   *Tie-breaking*: Deterministic priority order `[no_action, retry, payment_link, reminder, escalate]`.
 
-In our synthetic environment `sim_v1`:
-1. Ground truth predetermines the complete potential outcome vector $\mathbf{Y}_i = (Y_i(\text{no\_action}), Y_i(\text{retry}), Y_i(\text{payment\_link}), Y_i(\text{reminder}), Y_i(\text{escalate}))$ for every case $i$.
-2. For each action $a \in \mathcal{A}$, the training data provides the exact supervised realization $(X_i, Y_i(a))$.
-3. We train **5 independent action-conditional models** $f_a(X) \to \hat{P}(Y(a)=1 \mid X)$.
-4. Each model specializes in the specific non-linear response curve and failure-type interactions of action $a$.
-
----
-
-## 3. Temporal Feature Safety & Anti-Leakage Guarantees
-
-### Verification of Temporal Feature Safety
-All customer history fields:
-- `customer_historical_success_rate`
-- `customer_total_transactions`
-- `customer_total_failures`
-- `customer_avg_amount_paise`
-- `customer_tenure_months`
-
-represent prior lifetime behavioral statistics generated at customer profile creation time. They are strictly established **at or before** the payment incident being predicted, and have zero dependence on the incident's outcome, potential outcomes, or future events.
-
-### Strict Data Leakage Boundary
-- `PaymentCase` features contain zero ground-truth probabilities, optimal actions, latent variables ($Z_{\text{intent}}, Z_{\text{funds}}$), or future outcomes.
-- `FeatureExtractor` validates every input case against `OBSERVABLE_INPUT_FIELDS` and blocks any forbidden token with `DataLeakageError`.
-- Potential outcomes $Y(a)$ from ground truth are strictly used as the supervised training target $y$, and **never** enter the feature matrix $X$.
+### Authoritative Friction Costs (`simulator.config.ACTION_COSTS_PAISE`)
+- `no_action`: **0 paise** (₹0.00) — Passive observation baseline.
+- `retry`: **200 paise** (₹2.00) — Automated gateway retry overhead.
+- `payment_link`: **1,000 paise** (₹10.00) — Communication channel cost + user friction.
+- `reminder`: **500 paise** (₹5.00) — Notification / reminder friction.
+- `escalate`: **5,000 paise** (₹50.00) — Manual operations and agent intervention overhead.
 
 ---
 
-## 4. Model Architectures & Calibration Protocol
+## 3. Safety Guardrails & Policy Constraints
 
-### A. Logistic Regression Baseline (`LogisticRecoveryModel`)
-- Standardizes features via `StandardScaler`.
-- Applies L2 regularization ($C=1.0$) with L-BFGS solver.
-- Calibrated via internal 5-fold cross-validation Platt scaling (`CalibratedClassifierCV(method='sigmoid', cv=5)`).
-- Serves as the transparent, convex baseline.
-
-### B. Gradient Boosted Model (`GBMRecoveryModel`)
-- Uses `HistGradientBoostingClassifier` with max 100 iterations, learning rate 0.08, min 20 samples per leaf, and L2 regularization 1.0.
-- Models complex non-linear retry-fatigue curves, amount thresholds, and interaction terms.
-- Calibrated via internal 5-fold cross-validation Platt scaling (`CalibratedClassifierCV(method='sigmoid', cv=5)`).
-
-### Strict Calibration Boundary
-- **TRAIN Split**: Used exclusively for model fitting and internal cross-validation probability calibration.
-- **VAL Split**: Used exclusively for out-of-sample predictive diagnostics (Log Loss, Brier Score, ROC-AUC, ECE) and model selection.
-- **TEST Split**: Kept 100% untouched until final benchmark evaluation.
+1. **`NO_ACTION` Invariant**: `NO_ACTION` is **always allowed** across all cases. If all intervention actions yield negative expected net value ($\hat{\mathbb{E}}[\text{Net}](a) < 0$), the engine selects `NO_ACTION`.
+2. **Maximum Retry Protection**: If `retry_count >= 2`, `RETRY` is disqualified. The engine chooses among `[no_action, payment_link, reminder, escalate]`.
+3. **Micro-Ticket Protection**: If `amount_paise < 20,000` (₹200), `ESCALATE` is disqualified to prevent spending ₹50 on low-ticket recoveries.
 
 ---
 
-## 5. Validation Predictive Diagnostics (Validation Split — 1,500 Cases)
+## 4. Decision Margin & Regret Metrics
+
+- **Decision Margin**: The difference in expected net payoff between the selected best action and the second-best allowed action:
+  $$\text{Margin}_i = \hat{\mathbb{E}}[\text{Net}_i(a^*)] - \max_{a \in \mathcal{A}_{\text{allowed}} \setminus \{a^*\}} \hat{\mathbb{E}}[\text{Net}_i(a)]$$
+  Higher margins indicate higher decision confidence and economically meaningful trade-offs.
+- **Regret vs. Oracle**: The economic opportunity loss compared to the omniscient ground-truth policy under identical realized potential outcomes:
+  $$\text{Regret} = \text{Net}_{\text{oracle}} - \text{Net}_{\text{policy}}$$
+
+---
+
+## 5. Validation Economic Decision Comparison (Validation Split — 1,500 Cases)
+
+Revenue at Risk: **₹4,487,368.00** (448,736,800 paise).
 
 ```
-===============================================================================================
- RECOVERAI ML VALIDATION DIAGNOSTIC REPORT (SPLIT: VAL -- 1,500 Cases)
-===============================================================================================
-Action           | Model Type             |  Log Loss | Brier Score |  ROC-AUC |     ECE | Pos Rate
------------------------------------------------------------------------------------------------
-no_action        | logistic_regression    |    0.1093 |      0.0247 |   0.7759 |  0.0020 |    2.60%
-no_action        | hist_gradient_boosting |    0.1099 |      0.0249 |   0.7673 |  0.0051 |    2.60%
------------------------------------------------------------------------------------------------
-retry            | logistic_regression    |    0.3448 |      0.1113 |   0.8856 |  0.0196 |   24.80%
-retry            | hist_gradient_boosting |    0.3552 |      0.1146 |   0.8798 |  0.0335 |   24.80%
------------------------------------------------------------------------------------------------
-payment_link     | logistic_regression    |    0.6552 |      0.2314 |   0.6295 |  0.0184 |   58.27%
-payment_link     | hist_gradient_boosting |    0.6648 |      0.2361 |   0.6079 |  0.0262 |   58.27%
------------------------------------------------------------------------------------------------
-reminder         | logistic_regression    |    0.5431 |      0.1822 |   0.7423 |  0.0423 |   32.53%
-reminder         | hist_gradient_boosting |    0.5584 |      0.1887 |   0.7214 |  0.0257 |   32.53%
------------------------------------------------------------------------------------------------
-escalate         | logistic_regression    |    0.6350 |      0.2222 |   0.6601 |  0.0243 |   59.67%
-escalate         | hist_gradient_boosting |    0.6431 |      0.2261 |   0.6399 |  0.0256 |   59.67%
------------------------------------------------------------------------------------------------
-===============================================================================================
+===================================================================================================================
+ RECOVERAI VALIDATION DECISION COMPARISON (SPLIT: VAL -- 1,500 Cases | Revenue at Risk: INR 4,487,368.00)
+===================================================================================================================
+Policy / Engine           |  Net Rec (INR) | Gross Rec (INR) |   Cost (INR) |   Delta vs Rule | Regret vs Oracle | Rec Rate | Int Rate
+-------------------------------------------------------------------------------------------------------------------
+Rule Baseline             | INR 2,918,209.00 | INR 2,937,689.00 | INR 19,480.00 |              -- |   INR 107,186.00 |    66.5% |   100.0%
+Logistic Decision Engine  | INR 3,005,931.00 | INR 3,032,939.00 | INR 27,008.00 | +INR 87,722.00 (+3.01%) |    INR 19,464.00 |    68.9% |   100.0%
+GBM Decision Engine       | INR 2,944,316.00 | INR 2,974,265.00 | INR 29,949.00 | +INR 26,107.00 (+0.89%) |    INR 81,079.00 |    67.5% |   100.0%
+Oracle                    | INR 3,025,395.00 | INR 3,049,593.00 | INR 24,198.00 | +INR 107,186.00 (+3.67%) |         INR 0.00 |    69.3% |    88.5%
+===================================================================================================================
 ```
+
+### Action Distributions
+- **Rule Baseline**: `retry`: 38.0%, `payment_link`: 46.9%, `escalate`: 15.1%, `reminder`: 0.0%, `no_action`: 0.0%.
+- **Logistic Decision Engine**: `retry`: 27.6%, `payment_link`: 39.7%, `escalate`: 26.3%, `reminder`: 6.4%, `no_action`: 0.0%.
+- **GBM Decision Engine**: `retry`: 24.1%, `payment_link`: 41.4%, `escalate`: 30.3%, `reminder`: 4.2%, `no_action`: 0.0%.
+- **Oracle**: `retry`: 23.9%, `payment_link`: 35.5%, `escalate`: 23.7%, `reminder`: 5.5%, `no_action`: 11.5%.
+
+### Internal Decision Engine Economics
+- **Logistic Decision Engine**: Average Expected Net = **₹2,116.62** | Average Decision Margin = **₹373.16**.
+- **GBM Decision Engine**: Average Expected Net = **₹1,998.99** | Average Decision Margin = **₹240.36**.
+
+---
+
+## 6. Subgroup Economic Insights
+
+```
+--- FAILURE TYPE ---
+Subgroup                   |       Rule Net |   Logistic Net |        GBM Net |     Oracle Net |  Logistic Uplift
+---------------------------------------------------------------------------------------------------------
+insufficient_funds         | INR 898,045.00 | INR 879,403.00 | INR 856,231.00 | INR 899,551.00 | -INR 18,642.00 (-2.1%)
+invalid_payment_method     | INR 646,279.00 | INR 641,726.00 | INR 640,850.00 | INR 623,217.00 | -INR 4,553.00 (-0.7%)
+temporary_failure          | INR 911,515.00 | INR 1,022,392.00 | INR 986,337.00 | INR 1,040,165.00 | +INR 110,877.00 (+12.2%)
+unknown_failure            | INR 462,370.00 | INR 462,410.00 | INR 460,898.00 | INR 462,462.00 | +INR 40.00 (+0.0%)
+
+--- RETRY COUNT ---
+Subgroup                   |       Rule Net |   Logistic Net |        GBM Net |     Oracle Net |  Logistic Uplift
+---------------------------------------------------------------------------------------------------------
+retries_0                  | INR 2,052,660.00 | INR 2,023,459.00 | INR 1,986,542.00 | INR 2,044,543.00 | -INR 29,201.00 (-1.4%)
+retries_1                  | INR 596,218.00 | INR 624,069.00 | INR 602,531.00 | INR 616,239.00 | +INR 27,851.00 (+4.7%)
+retries_2                  | INR 159,040.00 | INR 248,384.00 | INR 245,445.00 | INR 253,552.00 | +INR 89,344.00 (+56.2%)
+retries_3                  | INR 110,291.00 | INR 110,019.00 | INR 109,798.00 | INR 111,061.00 | -INR 272.00 (-0.2%)
+
+--- SUBSCRIPTION STATUS ---
+Subgroup                   |       Rule Net |   Logistic Net |        GBM Net |     Oracle Net |  Logistic Uplift
+---------------------------------------------------------------------------------------------------------
+one_off                    | INR 2,354,004.00 | INR 2,372,408.00 | INR 2,357,451.00 | INR 2,388,327.00 | +INR 18,404.00 (+0.8%)
+subscription               | INR 564,205.00 | INR 633,523.00 | INR 586,865.00 | INR 637,068.00 | +INR 69,318.00 (+12.3%)
+```
+
+### Key Takeaway
+The decision engine creates massive economic alpha by intelligently switching away from dead-end retries when `retry_count >= 2` (**+₹89,344.00 / +56.2% uplift**) and optimizing high-value interventions on recurring subscriptions (**+₹69,318.00 / +12.3% uplift**).

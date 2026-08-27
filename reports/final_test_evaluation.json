@@ -1,0 +1,123 @@
+{
+  "split": "test",
+  "num_cases": 1500,
+  "revenue_at_risk_paise": 406530600,
+  "revenue_at_risk_inr": 4065306.0,
+  "policies": {
+    "No Action": {
+      "net_recovered_paise": 6651700,
+      "net_recovered_inr": 66517.0,
+      "gross_recovered_paise": 6651700,
+      "gross_recovered_inr": 66517.0,
+      "intervention_cost_paise": 0,
+      "intervention_cost_inr": 0.0,
+      "delta_vs_rule_baseline_paise": -263878800,
+      "delta_vs_rule_baseline_inr": -2638788.0,
+      "delta_vs_rule_baseline_pct": -97.54123841858866,
+      "regret_vs_oracle_paise": 293671400,
+      "regret_vs_oracle_inr": 2936714.0,
+      "recovery_rate": 0.02666666666666667,
+      "intervention_rate": 0.0,
+      "escalation_rate": 0.0,
+      "action_counts": {
+        "no_action": 1500,
+        "retry": 0,
+        "payment_link": 0,
+        "reminder": 0,
+        "escalate": 0
+      }
+    },
+    "Rule Baseline": {
+      "net_recovered_paise": 270530500,
+      "net_recovered_inr": 2705305.0,
+      "gross_recovered_paise": 272413700,
+      "gross_recovered_inr": 2724137.0,
+      "intervention_cost_paise": 1883200,
+      "intervention_cost_inr": 18832.0,
+      "delta_vs_rule_baseline_paise": 0,
+      "delta_vs_rule_baseline_inr": 0.0,
+      "delta_vs_rule_baseline_pct": 0.0,
+      "regret_vs_oracle_paise": 29792600,
+      "regret_vs_oracle_inr": 297926.0,
+      "recovery_rate": 0.692,
+      "intervention_rate": 1.0,
+      "escalation_rate": 0.13866666666666666,
+      "action_counts": {
+        "no_action": 0,
+        "retry": 561,
+        "payment_link": 731,
+        "reminder": 0,
+        "escalate": 208
+      }
+    },
+    "Logistic Decision Engine": {
+      "net_recovered_paise": 294693100,
+      "net_recovered_inr": 2946931.0,
+      "gross_recovered_paise": 297205700,
+      "gross_recovered_inr": 2972057.0,
+      "intervention_cost_paise": 2512600,
+      "intervention_cost_inr": 25126.0,
+      "delta_vs_rule_baseline_paise": 24162600,
+      "delta_vs_rule_baseline_inr": 241626.0,
+      "delta_vs_rule_baseline_pct": 8.93156224529212,
+      "regret_vs_oracle_paise": 5630000,
+      "regret_vs_oracle_inr": 56300.0,
+      "recovery_rate": 0.7133333333333334,
+      "intervention_rate": 1.0,
+      "escalation_rate": 0.23533333333333334,
+      "action_counts": {
+        "no_action": 0,
+        "retry": 423,
+        "payment_link": 602,
+        "reminder": 122,
+        "escalate": 353
+      }
+    },
+    "GBM Decision Engine": {
+      "net_recovered_paise": 283131900,
+      "net_recovered_inr": 2831319.0,
+      "gross_recovered_paise": 285919300,
+      "gross_recovered_inr": 2859193.0,
+      "intervention_cost_paise": 2787400,
+      "intervention_cost_inr": 27874.0,
+      "delta_vs_rule_baseline_paise": 12601400,
+      "delta_vs_rule_baseline_inr": 126014.0,
+      "delta_vs_rule_baseline_pct": 4.658033012913516,
+      "regret_vs_oracle_paise": 17191200,
+      "regret_vs_oracle_inr": 171912.0,
+      "recovery_rate": 0.696,
+      "intervention_rate": 1.0,
+      "escalation_rate": 0.2713333333333333,
+      "action_counts": {
+        "no_action": 0,
+        "retry": 377,
+        "payment_link": 638,
+        "reminder": 78,
+        "escalate": 407
+      }
+    },
+    "Oracle": {
+      "net_recovered_paise": 300323100,
+      "net_recovered_inr": 3003231.0,
+      "gross_recovered_paise": 302564800,
+      "gross_recovered_inr": 3025648.0,
+      "intervention_cost_paise": 2241700,
+      "intervention_cost_inr": 22417.0,
+      "delta_vs_rule_baseline_paise": 29792600,
+      "delta_vs_rule_baseline_inr": 297926.0,
+      "delta_vs_rule_baseline_pct": 11.012658461800056,
+      "regret_vs_oracle_paise": 0,
+      "regret_vs_oracle_inr": 0.0,
+      "recovery_rate": 0.7286666666666667,
+      "intervention_rate": 0.8853333333333333,
+      "escalation_rate": 0.21333333333333335,
+      "action_counts": {
+        "no_action": 172,
+        "retry": 381,
+        "payment_link": 504,
+        "reminder": 123,
+        "escalate": 320
+      }
+    }
+  }
+}
