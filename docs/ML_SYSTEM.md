@@ -62,7 +62,7 @@ These probabilities feed into the **Expected Net Value Decision Engine**, which 
 ## 2. Modeling Formulation: Action-Conditional Potential-Outcome Models
 
 ### Distinction from Observational Causal Inference
-In observational data, researchers must control for unobserved confounders and propensity scores because treatment assignments are selective. 
+In observational payment datasets, researchers must model treatment propensity scores $P(A \mid X)$ because treatment assignments are selective and confounded.
 
 In our synthetic environment `sim_v1`:
 1. Ground truth predetermines the complete potential outcome vector $\mathbf{Y}_i = (Y_i(\text{no\_action}), Y_i(\text{retry}), Y_i(\text{payment\_link}), Y_i(\text{reminder}), Y_i(\text{escalate}))$ for every case $i$.
@@ -91,16 +91,48 @@ represent prior lifetime behavioral statistics generated at customer profile cre
 
 ---
 
-## 4. Supervised Dataset Representation (`ml/dataset.py`)
+## 4. Model Architectures & Calibration Protocol
 
-For each split (`train`, `val`, `test`), `PotentialOutcomeDatasetBundle` produces:
-- $\mathcal{D}_{\text{no\_action}} = (X, y_{\text{no\_action}})$
-- $\mathcal{D}_{\text{retry}} = (X, y_{\text{retry}})$
-- $\mathcal{D}_{\text{payment\_link}} = (X, y_{\text{payment\_link}})$
-- $\mathcal{D}_{\text{reminder}} = (X, y_{\text{reminder}})$
-- $\mathcal{D}_{\text{escalate}} = (X, y_{\text{escalate}})$
+### A. Logistic Regression Baseline (`LogisticRecoveryModel`)
+- Standardizes features via `StandardScaler`.
+- Applies L2 regularization ($C=1.0$) with L-BFGS solver.
+- Calibrated via internal 5-fold cross-validation Platt scaling (`CalibratedClassifierCV(method='sigmoid', cv=5)`).
+- Serves as the transparent, convex baseline.
 
-Where:
-- $X \in \mathbb{R}^{N \times 24}$ (canonical observable features).
-- $y_a \in \{0, 1\}^N$ (binary realized potential outcome for action $a$).
-- Case IDs are retained separately for audit logs and never included in $X$.
+### B. Gradient Boosted Model (`GBMRecoveryModel`)
+- Uses `HistGradientBoostingClassifier` with max 100 iterations, learning rate 0.08, min 20 samples per leaf, and L2 regularization 1.0.
+- Models complex non-linear retry-fatigue curves, amount thresholds, and interaction terms.
+- Calibrated via internal 5-fold cross-validation Platt scaling (`CalibratedClassifierCV(method='sigmoid', cv=5)`).
+
+### Strict Calibration Boundary
+- **TRAIN Split**: Used exclusively for model fitting and internal cross-validation probability calibration.
+- **VAL Split**: Used exclusively for out-of-sample predictive diagnostics (Log Loss, Brier Score, ROC-AUC, ECE) and model selection.
+- **TEST Split**: Kept 100% untouched until final benchmark evaluation.
+
+---
+
+## 5. Validation Predictive Diagnostics (Validation Split — 1,500 Cases)
+
+```
+===============================================================================================
+ RECOVERAI ML VALIDATION DIAGNOSTIC REPORT (SPLIT: VAL -- 1,500 Cases)
+===============================================================================================
+Action           | Model Type             |  Log Loss | Brier Score |  ROC-AUC |     ECE | Pos Rate
+-----------------------------------------------------------------------------------------------
+no_action        | logistic_regression    |    0.1093 |      0.0247 |   0.7759 |  0.0020 |    2.60%
+no_action        | hist_gradient_boosting |    0.1099 |      0.0249 |   0.7673 |  0.0051 |    2.60%
+-----------------------------------------------------------------------------------------------
+retry            | logistic_regression    |    0.3448 |      0.1113 |   0.8856 |  0.0196 |   24.80%
+retry            | hist_gradient_boosting |    0.3552 |      0.1146 |   0.8798 |  0.0335 |   24.80%
+-----------------------------------------------------------------------------------------------
+payment_link     | logistic_regression    |    0.6552 |      0.2314 |   0.6295 |  0.0184 |   58.27%
+payment_link     | hist_gradient_boosting |    0.6648 |      0.2361 |   0.6079 |  0.0262 |   58.27%
+-----------------------------------------------------------------------------------------------
+reminder         | logistic_regression    |    0.5431 |      0.1822 |   0.7423 |  0.0423 |   32.53%
+reminder         | hist_gradient_boosting |    0.5584 |      0.1887 |   0.7214 |  0.0257 |   32.53%
+-----------------------------------------------------------------------------------------------
+escalate         | logistic_regression    |    0.6350 |      0.2222 |   0.6601 |  0.0243 |   59.67%
+escalate         | hist_gradient_boosting |    0.6431 |      0.2261 |   0.6399 |  0.0256 |   59.67%
+-----------------------------------------------------------------------------------------------
+===============================================================================================
+```
