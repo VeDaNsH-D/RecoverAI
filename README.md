@@ -15,7 +15,7 @@ Standard industry recovery approaches rely on crude heuristics:
 - **Spam Notifications**: Send premature payment links or generic reminders that annoy customers and increase churn.
 - **Manual Escalations**: Deploy expensive support operations on low-value tickets where operational friction exceeds the transaction value.
 
-**RecoverAI** replaces static heuristics with an **economically bounded, causal machine learning decision engine**. It evaluates observable payment context, predicts action-conditional recovery probabilities $P(Y(a)=1 \mid X)$, computes expected net recovery in integer paise, and executes interventions bounded by hard safety guardrails.
+**RecoverAI** replaces static heuristics with an **economically bounded, causal machine learning decision engine and operational recovery workflow**. It evaluates observable payment context, predicts action-conditional recovery probabilities $P(Y(a)=1 \mid X)$, computes expected net recovery in integer paise, executes interventions bounded by hard safety guardrails, and tracks observed outcomes through an idempotent state machine.
 
 ---
 
@@ -69,10 +69,12 @@ Standard industry recovery approaches rely on crude heuristics:
                                         |
                                         v
 +-------------------------------------------------------------------------------+
-|                       6. MERCHANT API & AUDITABLE DECISION                    |
+|                       6. MERCHANT API & RECOVERY OPERATIONS                   |
 |                                                                               |
 |  - POST /api/v1/decisions -> Recommended Action, Expected Net Value, Margins  |
-|  - Full Action Economics & Safety Audit Ledger (docs/API.md)                  |
+|  - POST /api/v1/recovery/actions -> Idempotent Action Provider Execution      |
+|  - POST /api/v1/recovery/outcomes -> Settlement Events & State Transitions    |
+|  - GET  /api/v1/recovery/summary  -> Observational Operational & Financial KPI|
 +-------------------------------------------------------------------------------+
 ```
 
@@ -103,19 +105,24 @@ Evaluated under **Common Random Numbers (CRN)** on the frozen `sim_v1` held-out 
 ## 4. Quickstart & CLI Commands
 
 ### A. Run Merchant API Server
-Start the production-ready FastAPI recovery decision service:
+Start the production-ready FastAPI recovery decision and operations service:
 ```bash
 uvicorn api.app:app --host 0.0.0.0 --port 8000
 ```
 - Interactive API Docs: `http://localhost:8000/docs`
-- Health Endpoint: `GET /api/v1/health`
-- Model Metadata: `GET /api/v1/model-info`
 - Decision Endpoint: `POST /api/v1/decisions`
-- Comprehensive Documentation: [`docs/API.md`](docs/API.md)
+- Action Execution: `POST /api/v1/recovery/actions`
+- Outcome Settlement: `POST /api/v1/recovery/outcomes`
+- Operational Summary: `GET /api/v1/recovery/summary`
+- Complete Reference: [`docs/API.md`](docs/API.md) | [`docs/RECOVERY_OPERATIONS.md`](docs/RECOVERY_OPERATIONS.md)
 
-### B. Run Live HTTP Smoke Test
+### B. Run Live Integration Smoke Tests
 ```bash
+# Test API Decisions:
 python scripts/smoke_test_api.py
+
+# Test Full Recovery Operations Lifecycle:
+python scripts/smoke_test_operations.py
 ```
 
 ### C. Run Interactive Demo CLI
@@ -124,7 +131,7 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (60 Tests)
+### D. Run Full Test Suite (69 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
@@ -149,8 +156,8 @@ recoverai/
 │   ├── app.py                  # App factory, lifespan, CORS, and routing
 │   ├── config.py               # Environment configuration settings
 │   ├── schemas.py              # Strict closed Pydantic request/response contracts
-│   ├── routes/                 # API endpoint routers (/health, /model-info, /decisions)
-│   └── services/               # RecoveryDecisionService & ExplanationService
+│   ├── routes/                 # API endpoint routers (/health, /model-info, /decisions, /recovery)
+│   └── services/               # RecoveryDecisionService, OperationsService, ExplanationService
 ├── data/
 │   └── sim_v1/                 # Frozen benchmark dataset (Train: 7k, Val: 1.5k, Test: 1.5k)
 ├── docs/
@@ -160,7 +167,8 @@ recoverai/
 │   ├── DECISIONS.md            # Architecture Decision Records (ADRs 001-008)
 │   ├── EVALUATION.md           # Formal evaluation metrics & integer paise math
 │   ├── ML_SYSTEM.md            # Machine learning decision theory & diagnostics
-│   └── PRD.md                  # Product requirements & KPI definitions
+│   ├── PRD.md                  # Product requirements & KPI definitions
+│   └── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
 ├── ml/
 │   ├── features.py             # Leakage-safe observable feature extraction (24D)
 │   ├── dataset.py              # Supervised potential-outcome dataset bundles
@@ -173,6 +181,12 @@ recoverai/
 │       └── bundle.py           # MultiActionRecoveryModel coordinator
 ├── models/
 │   └── champion_recovery_model.pkl # Pre-trained champion model artifact (33.80 KB)
+├── recovery/                   # Recovery Operations Domain & Infrastructure
+│   ├── models.py               # Case, Decision, Action, and Outcome domain models
+│   ├── state_machine.py        # Deterministic state machine & legal transitions
+│   ├── repository.py           # SQLite repository with atomic transactions
+│   ├── executor.py             # Provider dispatcher & registry
+│   └── actions/                # Provider-agnostic action mocks (retry, link, remind, etc.)
 ├── reports/
 │   ├── final_test_evaluation.json  # Reproducible test benchmark results
 │   └── final_test_evaluation.md    # Markdown benchmark report
@@ -181,10 +195,11 @@ recoverai/
 │   ├── diagnose_decision_gap.py# Decision gap diagnostic & confusion matrices
 │   ├── run_final_test_evaluation.py # Test split evaluation runner
 │   ├── save_champion_model.py  # Export pre-trained champion model artifact
-│   ├── smoke_test_api.py       # Live HTTP integration smoke test
+│   ├── smoke_test_api.py       # Live HTTP decision smoke test
+│   ├── smoke_test_operations.py# Live HTTP operations lifecycle smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 60 unit, integration, security, and API tests
+└── tests/                      # 69 unit, integration, security, API, and operations tests
 ```
 
 ---
@@ -195,3 +210,4 @@ recoverai/
 2. **Zero Ground-Truth Leakage Guarantee**: The API and inference path ingest only observable `PaymentCase` fields. Any unauthorized token (`latent_intent`, `latent_funds`, `optimal_action`, `actual_outcome`) immediately raises a `DataLeakageError` or `422 Unprocessable Entity`.
 3. **Common Random Numbers (CRN)**: Policies are evaluated against identical realizations of potential outcomes $Y(a)$, guaranteeing that differences in net recovery represent true decision quality rather than stochastic noise.
 4. **Customer-Level Split Partitioning**: Train (1,400 customers), Validation (300 customers), and Test (300 customers) are 100% disjoint at the customer identity level.
+5. **Stateful Auditability & Idempotency**: Every decision, action dispatch, and observed settlement is persisted with immutable state transitions and unique idempotency keys.
