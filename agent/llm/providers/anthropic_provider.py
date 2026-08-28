@@ -106,31 +106,3 @@ class AnthropicLLMProvider(LLMProvider):
             )
         except Exception as err:
             raise RuntimeError(f"Anthropic API Error: {str(err)}") from err
-
-
-class GeminiLLMProvider(LLMProvider):
-    """
-    Google Gemini tool-calling provider client.
-    """
-
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        model: str = "gemini-2.0-flash",
-        timeout: float = 15.0,
-    ):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        self.model = model
-        self.timeout = timeout
-
-    def generate_tool_call(
-        self,
-        messages: List[LLMMessage],
-        tools: List[Dict[str, Any]],
-        temperature: float = 0.0,
-    ) -> LLMResponse:
-        if not self.api_key:
-            raise RuntimeError("GEMINI_API_KEY is not configured.")
-
-        # In standard offline environments or when key is absent, use MockLLMProvider
-        raise NotImplementedError("Live Gemini provider requires configured GEMINI_API_KEY.")

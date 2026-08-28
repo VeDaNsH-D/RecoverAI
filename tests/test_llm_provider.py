@@ -8,6 +8,7 @@ from agent.llm.base import LLMMessage, LLMResponse, LLMToolCall
 from agent.llm.providers.mock_provider import MockLLMProvider
 from agent.llm.providers.openai_provider import OpenAILLMProvider
 from agent.llm.providers.anthropic_provider import AnthropicLLMProvider
+from agent.llm.providers.gemini_provider import GeminiLLMProvider
 from agent.tools.registry import default_tool_registry
 
 
@@ -98,3 +99,8 @@ def test_external_providers_missing_key_handling():
     with pytest.raises(RuntimeError) as exc_anthropic:
         anthropic_prov.generate_tool_call([], [])
     assert "ANTHROPIC_API_KEY" in str(exc_anthropic.value)
+
+    gemini_prov = GeminiLLMProvider(api_key="")
+    with pytest.raises(RuntimeError) as exc_gemini:
+        gemini_prov.generate_tool_call([], [])
+    assert "GEMINI_API_KEY" in str(exc_gemini.value)
