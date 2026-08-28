@@ -424,6 +424,98 @@ Detailed documentation: [`docs/PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md
 
 ---
 
+### 2.10 Autonomous & LLM Tool-Calling Agent Endpoints (Milestones 4 & 5)
+- **Endpoint**: `POST /api/v1/agent/recover`
+- **Description**: Orchestrates an autonomous recovery workflow for a failed payment incident using Deterministic or LLM Tool-Calling drivers.
+- **Request Body**:
+```json
+{
+  "case_id": "case_agent_001",
+  "customer_id": "cust_agent_001",
+  "amount_paise": 750000,
+  "currency": "INR",
+  "payment_method": "upi",
+  "is_subscription": false,
+  "customer_historical_success_rate": 0.95,
+  "customer_total_transactions": 40,
+  "customer_total_failures": 1,
+  "customer_avg_amount_paise": 750000,
+  "customer_tenure_months": 20,
+  "failure_type": "temporary_failure",
+  "retry_count": 0,
+  "hours_since_failure": 0.1,
+  "driver": "llm",
+  "idempotency_key": "idemp_agent_001"
+}
+```
+- **Response `200 OK`**:
+```json
+{
+  "agent_run_id": "run_d3ac95dbc8f5",
+  "case_id": "case_agent_001",
+  "decision_id": "dec_3faab210ea5c",
+  "action_id": "act_09130f199ce3",
+  "recommended_action": "retry",
+  "executed_action": "retry",
+  "execution_status": "EXECUTED",
+  "final_operational_state": "ACTION_EXECUTED",
+  "recovery_probability": 0.7064,
+  "expected_gross_paise": 529767,
+  "expected_gross_inr": 5297.67,
+  "action_cost_paise": 200,
+  "action_cost_inr": 2.0,
+  "expected_net_paise": 529567,
+  "expected_net_inr": 5295.67,
+  "decision_margin_paise": 139125,
+  "status": "completed",
+  "driver_type": "llm",
+  "total_tokens": 575,
+  "llm_latency_ms": 10.0,
+  "started_at": "2026-08-28T15:40:00.000000+00:00",
+  "completed_at": "2026-08-28T15:40:00.050000+00:00",
+  "trace": {
+    "agent_run_id": "run_d3ac95dbc8f5",
+    "case_id": "case_agent_001",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "agent_run_id": "run_d3ac95dbc8f5",
+        "step_index": 0,
+        "step_type": "CASE_RETRIEVED",
+        "status": "success"
+      },
+      {
+        "step_id": "step_2",
+        "agent_run_id": "run_d3ac95dbc8f5",
+        "step_index": 1,
+        "step_type": "DECISION_OBTAINED",
+        "tool_name": "get_recovery_decision",
+        "llm_prompt_tokens": 210,
+        "llm_completion_tokens": 35,
+        "status": "success"
+      },
+      {
+        "step_id": "step_3",
+        "agent_run_id": "run_d3ac95dbc8f5",
+        "step_index": 2,
+        "step_type": "ACTION_EXECUTED",
+        "tool_name": "execute_recovery_action",
+        "llm_prompt_tokens": 280,
+        "llm_completion_tokens": 50,
+        "status": "success"
+      }
+    ]
+  }
+}
+```
+
+- **Endpoint**: `GET /api/v1/agent/runs/{agent_run_id}`
+- **Description**: Retrieves a persisted agent run and its full audit trace.
+
+Detailed documentation: [`docs/AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) and [`docs/LLM_AGENT.md`](LLM_AGENT.md)
+
+---
+
 ## 3. Local Development Commands
 
 ### Start API Server:
@@ -444,9 +536,15 @@ python scripts/smoke_test_analytics.py
 
 # Test production readiness, correlation ID, and observability
 python scripts/smoke_test_production_readiness.py
+
+# Test deterministic recovery agent workflow & idempotency
+python scripts/smoke_test_agent.py
+
+# Test LLM tool-calling agent workflow & idempotency
+python scripts/smoke_test_llm_agent.py
 ```
 
-### Run Full Test Suite (85 Tests):
+### Run Full Test Suite (116 Tests):
 ```bash
 python -m pytest tests/ -v
 ```

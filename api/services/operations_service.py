@@ -245,6 +245,13 @@ class OperationsService:
             idempotency_key=action.idempotency_key,
         )
 
+    def get_case(self, case_id: str) -> RecoveryCaseRecord:
+        """Retrieves case record by case ID."""
+        case = self.repository.get_case(case_id)
+        if case is None:
+            raise CaseNotFoundError(f"Case '{case_id}' not found.")
+        return case
+
     def record_outcome(self, request: OutcomeEventRequest) -> OutcomeEventResponse:
         """
         Validates and records an observed operational outcome event.

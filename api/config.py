@@ -5,7 +5,7 @@ Provides deterministic environment configuration, strict validation, and startup
 
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -29,6 +29,24 @@ class Settings(BaseModel):
     )
     db_path: Path = Field(
         default_factory=lambda: Path(os.getenv("RECOVERAI_DB_PATH", "data/recovery_operations.db"))
+    )
+    agent_driver: Literal["deterministic", "llm"] = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_AGENT_DRIVER", "deterministic").lower()  # type: ignore
+    )
+    llm_provider: Literal["mock", "openai", "anthropic", "gemini"] = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_LLM_PROVIDER", "mock").lower()  # type: ignore
+    )
+    llm_model: str = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_LLM_MODEL", "mock-recovery-v1")
+    )
+    llm_api_key: Optional[str] = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_LLM_API_KEY")
+    )
+    llm_timeout_seconds: float = Field(
+        default_factory=lambda: float(os.getenv("RECOVERAI_LLM_TIMEOUT_SECONDS", "10.0"))
+    )
+    llm_temperature: float = Field(
+        default_factory=lambda: float(os.getenv("RECOVERAI_LLM_TEMPERATURE", "0.0"))
     )
 
     @field_validator("port")
