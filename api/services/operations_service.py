@@ -95,6 +95,10 @@ class OperationsService:
         explanation: str,
         model_family: str = "calibrated_logistic_regression",
         feature_version: str = "sim_v1_canonical_24d",
+        payment_method: str = "upi",
+        is_subscription: bool = False,
+        failure_type: str = "temporary_failure",
+        retry_count: int = 0,
         created_at: Optional[str] = None,
     ) -> DecisionRecord:
         """
@@ -117,7 +121,13 @@ class OperationsService:
             feature_version=feature_version,
             created_at=ts,
         )
-        self.repository.save_decision(record)
+        self.repository.save_decision(
+            record,
+            payment_method=payment_method,
+            is_subscription=is_subscription,
+            failure_type=failure_type,
+            retry_count=retry_count,
+        )
         return record
 
     def execute_action(self, request: ActionExecutionRequest) -> ActionExecutionResponse:

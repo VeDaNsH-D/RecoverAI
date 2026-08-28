@@ -59,7 +59,23 @@ The RecoverAI API exposes real-time, economically bounded payment recovery decis
 
 ---
 
-### 2.2 Model Capabilities & Metadata
+### 2.2 Deep Readiness Check (Phase D)
+- **Endpoint**: `GET /api/v1/ready` (also aliased to `GET /ready`)
+- **Description**: Deep readiness probe verifying champion model availability and database connectivity.
+- **Response `200 OK`**:
+  ```json
+  {
+    "status": "ready",
+    "model_status": "ready",
+    "database_status": "connected",
+    "model_family": "calibrated_logistic_regression",
+    "timestamp": "2026-08-28T14:42:25.940477+00:00"
+  }
+  ```
+
+---
+
+### 2.3 Model Capabilities & Metadata
 - **Endpoint**: `GET /api/v1/model-info`
 - **Description**: Exposes product-safe metadata regarding the active champion recovery model.
 - **Guarantees**: Zero internal coefficients, training labels, latent states, or ground truth are exposed.
@@ -368,6 +384,46 @@ curl -X POST http://localhost:8000/api/v1/recovery/outcomes \
 
 ---
 
+### 2.8 Merchant Recovery Analytics Endpoints (Phase C)
+Comprehensive observational reporting over historical recovery operations:
+
+| Endpoint | Method | Query Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `GET /api/v1/analytics/overview` | `GET` | `start_date`, `end_date`, `action`, `failure_type`, `is_subscription`, `retry_count` | Complete operational KPIs and financial reconciliation |
+| `GET /api/v1/analytics/actions` | `GET` | `start_date`, `end_date`, `failure_type`, `is_subscription`, `retry_count` | Action-level breakdown in deterministic order |
+| `GET /api/v1/analytics/failure-types` | `GET` | `start_date`, `end_date`, `action`, `is_subscription`, `retry_count` | Diagnostic failure type breakdown |
+| `GET /api/v1/analytics/retry-count` | `GET` | `start_date`, `end_date`, `action`, `failure_type`, `is_subscription` | Prior retry count breakdown |
+| `GET /api/v1/analytics/subscriptions` | `GET` | `start_date`, `end_date`, `action`, `failure_type`, `retry_count` | Segment breakdown (`subscription` vs `one_off`) |
+| `GET /api/v1/analytics/trends` | `GET` | `interval` (`daily`/`weekly`), `start_date`, `end_date`, `action`, `failure_type`, `is_subscription`, `retry_count` | Time-series trend bucketing |
+
+Detailed documentation: [`docs/ANALYTICS.md`](ANALYTICS.md)
+
+---
+
+### 2.9 Operational Observability Telemetry (Phase D)
+- **Endpoint**: `GET /api/v1/observability/metrics` (also aliased to `GET /observability/metrics`)
+- **Description**: Exposes runtime traffic, response status codes, rolling latency, and execution counters.
+- **Sample Response `200 OK`**:
+```json
+{
+  "uptime_seconds": 124.5,
+  "requests_total": 450,
+  "responses_2xx": 442,
+  "responses_4xx": 8,
+  "responses_5xx": 0,
+  "avg_latency_ms": 5.2,
+  "decisions_generated": 150,
+  "actions_dispatched": 120,
+  "execution_failures": 2,
+  "outcomes_recorded": 118,
+  "timestamp": "2026-08-28T14:45:00.000000+00:00"
+}
+```
+
+Detailed documentation: [`docs/PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md)
+
+---
+
 ## 3. Local Development Commands
 
 ### Start API Server:
@@ -375,12 +431,22 @@ curl -X POST http://localhost:8000/api/v1/recovery/outcomes \
 uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Run Live Operations Smoke Test:
+### Run Live Smoke Tests:
 ```bash
+# Test API decisions
+python scripts/smoke_test_api.py
+
+# Test recovery operations lifecycle
 python scripts/smoke_test_operations.py
+
+# Test analytics & financial reconciliation
+python scripts/smoke_test_analytics.py
+
+# Test production readiness, correlation ID, and observability
+python scripts/smoke_test_production_readiness.py
 ```
 
-### Run Full Test Suite:
+### Run Full Test Suite (85 Tests):
 ```bash
 python -m pytest tests/ -v
 ```

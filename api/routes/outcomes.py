@@ -35,7 +35,10 @@ async def record_recovery_outcome(request: OutcomeEventRequest):
     Transitions the recovery case to a terminal state (RECOVERED or NOT_RECOVERED).
     """
     try:
-        return operations_service.record_outcome(request)
+        outcome = operations_service.record_outcome(request)
+        from api.observability import observability_registry
+        observability_registry.record_outcome()
+        return outcome
     except (DuplicateOutcomeError, InvalidStateTransitionError) as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

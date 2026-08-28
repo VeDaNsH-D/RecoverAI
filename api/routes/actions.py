@@ -35,7 +35,10 @@ async def execute_recovery_action(request: ActionExecutionRequest):
     Guarantees strict idempotency and state machine enforcement.
     """
     try:
-        return operations_service.execute_action(request)
+        result = operations_service.execute_action(request)
+        from api.observability import observability_registry
+        observability_registry.record_action_dispatch(result.status.value)
+        return result
     except IdempotencyConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

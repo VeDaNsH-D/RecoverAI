@@ -80,13 +80,16 @@ def run_operations_smoke_test():
         print("-" * 75)
 
         # 2. Action Execution
+        run_id = f"{int(time.time())}_{uuid.uuid4().hex[:6]}" if "uuid" in globals() else f"{int(time.time())}"
+        import uuid
+        run_id = f"{int(time.time())}_{uuid.uuid4().hex[:6]}"
         print(f">>> 2. POST /api/v1/recovery/actions (Executing Action: {rec_action})")
-        idemp_key = "idemp_smoke_ops_001_v1"
+        idemp_key = f"idemp_smoke_ops_{run_id}"
         action_payload = {
             "decision_id": decision_id,
             "action": rec_action,
             "idempotency_key": idemp_key,
-            "merchant_reference": "ref_smoke_001",
+            "merchant_reference": f"ref_smoke_{run_id}",
         }
         resp_act = httpx.post(f"{url_base}/api/v1/recovery/actions", json=action_payload)
         assert resp_act.status_code == 200

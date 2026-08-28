@@ -123,6 +123,12 @@ python scripts/smoke_test_api.py
 
 # Test Full Recovery Operations Lifecycle:
 python scripts/smoke_test_operations.py
+
+# Test Merchant Recovery Analytics & Reconciliation:
+python scripts/smoke_test_analytics.py
+
+# Test Production Readiness, Correlation ID, and Observability:
+python scripts/smoke_test_production_readiness.py
 ```
 
 ### C. Run Interactive Demo CLI
@@ -131,7 +137,7 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (69 Tests)
+### D. Run Full Test Suite (85 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
@@ -152,15 +158,23 @@ python scripts/run_final_test_evaluation.py
 
 ```
 recoverai/
+├── analytics/                  # Merchant Analytics & Observability Layer
+│   ├── models.py               # Observational analytics schemas & query filters
+│   ├── metrics.py              # Exact integer paise calculations & rate utilities
+│   ├── repository.py           # SQL aggregation queries over operational records
+│   └── service.py              # Analytics service coordinator
 ├── api/                        # Merchant-Facing FastAPI Recovery Service
-│   ├── app.py                  # App factory, lifespan, CORS, and routing
-│   ├── config.py               # Environment configuration settings
+│   ├── app.py                  # App factory, lifespan, CORS, error handlers, and routing
+│   ├── config.py               # Typed environment configuration & startup validation
+│   ├── observability.py        # In-memory thread-safe operational metrics collector
 │   ├── schemas.py              # Strict closed Pydantic request/response contracts
-│   ├── routes/                 # API endpoint routers (/health, /model-info, /decisions, /recovery)
+│   ├── middleware/             # Request correlation (X-Request-ID) & structured logging
+│   ├── routes/                 # API routers (/health, /ready, /model-info, /decisions, /recovery, /analytics, /observability)
 │   └── services/               # RecoveryDecisionService, OperationsService, ExplanationService
 ├── data/
 │   └── sim_v1/                 # Frozen benchmark dataset (Train: 7k, Val: 1.5k, Test: 1.5k)
 ├── docs/
+│   ├── ANALYTICS.md            # Observational analytics definitions & guide
 │   ├── API.md                  # Complete Merchant API reference & cURL examples
 │   ├── ARCHITECTURE.md         # Layer decoupling & observable boundary diagrams
 │   ├── CAUSAL_MODEL.md         # Structural logit model & potential outcomes
@@ -168,6 +182,7 @@ recoverai/
 │   ├── EVALUATION.md           # Formal evaluation metrics & integer paise math
 │   ├── ML_SYSTEM.md            # Machine learning decision theory & diagnostics
 │   ├── PRD.md                  # Product requirements & KPI definitions
+│   ├── PRODUCTION_READINESS.md # Production readiness, error envelopes, and correlation architecture
 │   └── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
 ├── ml/
 │   ├── features.py             # Leakage-safe observable feature extraction (24D)
@@ -184,7 +199,7 @@ recoverai/
 ├── recovery/                   # Recovery Operations Domain & Infrastructure
 │   ├── models.py               # Case, Decision, Action, and Outcome domain models
 │   ├── state_machine.py        # Deterministic state machine & legal transitions
-│   ├── repository.py           # SQLite repository with atomic transactions
+│   ├── repository.py           # SQLite repository with atomic transactions & busy timeout
 │   ├── executor.py             # Provider dispatcher & registry
 │   └── actions/                # Provider-agnostic action mocks (retry, link, remind, etc.)
 ├── reports/
@@ -197,9 +212,11 @@ recoverai/
 │   ├── save_champion_model.py  # Export pre-trained champion model artifact
 │   ├── smoke_test_api.py       # Live HTTP decision smoke test
 │   ├── smoke_test_operations.py# Live HTTP operations lifecycle smoke test
+│   ├── smoke_test_analytics.py # Live HTTP analytics smoke test
+│   ├── smoke_test_production_readiness.py # Live HTTP production readiness smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 69 unit, integration, security, API, and operations tests
+└── tests/                      # 85 unit, integration, security, API, operations, analytics, and readiness tests
 ```
 
 ---

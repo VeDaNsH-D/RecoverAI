@@ -131,6 +131,10 @@ class RecoveryService:
             explanation=explanation,
             model_family=self.model_family,
             feature_version="sim_v1_canonical_24d",
+            payment_method=case.payment_method.value if hasattr(case.payment_method, "value") else str(case.payment_method),
+            is_subscription=bool(case.is_subscription),
+            failure_type=case.failure_type.value if hasattr(case.failure_type, "value") else str(case.failure_type),
+            retry_count=int(case.retry_count),
             created_at=now_ts,
         )
 
