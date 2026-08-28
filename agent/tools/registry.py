@@ -11,6 +11,7 @@ from agent.tools.action import ExecuteRecoveryActionTool
 from agent.tools.action_status import GetActionStatusTool
 from agent.tools.outcome import RecordRecoveryOutcomeTool
 from agent.tools.summary import GetRecoverySummaryTool
+from agent.tools.razorpay_sync import SyncRazorpayPaymentLinkTool
 
 
 class ToolRegistry:
@@ -30,6 +31,7 @@ class ToolRegistry:
         self.register(GetActionStatusTool())
         self.register(RecordRecoveryOutcomeTool())
         self.register(GetRecoverySummaryTool())
+        self.register(SyncRazorpayPaymentLinkTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

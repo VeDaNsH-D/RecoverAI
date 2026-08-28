@@ -90,6 +90,15 @@ class ToolCallValidator:
                     category=FailureCategory.POLICY_VIOLATION,
                 )
 
+        # 4. Semantic Validation: Payment Link Status Sync
+        elif tool_name == "sync_razorpay_payment_link":
+            if context.current_operational_state not in ("ACTION_EXECUTED", "RECOVERED", "NOT_RECOVERED"):
+                raise ToolValidationError(
+                    f"Cannot synchronize payment link in current state '{context.current_operational_state}'. "
+                    "Action must be executed before payment link status can be queried.",
+                    category=FailureCategory.POLICY_VIOLATION,
+                )
+
     def validate_workflow_completion(self, context: AgentContext) -> None:
         """
         Verifies whether the agent reached a legitimate domain completion state.
