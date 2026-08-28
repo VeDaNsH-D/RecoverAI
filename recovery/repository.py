@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import threading
 from typing import Any, Dict, List, Optional
+import uuid
 
 from simulator.config import RecoveryAction
 from recovery.models import (
@@ -35,7 +36,10 @@ class RecoveryRepository:
         self.db_path = str(db_path)
         self.is_memory = self.db_path == ":memory:" or "mode=memory" in self.db_path
         if self.is_memory:
-            self._connect_path = "file:recoverai_shared_mem?mode=memory&cache=shared"
+            if self.db_path == ":memory:":
+                self._connect_path = f"file:recoverai_mem_{uuid.uuid4().hex}?mode=memory&cache=shared"
+            else:
+                self._connect_path = self.db_path
             self._uri = True
         else:
             self._connect_path = self.db_path
@@ -168,6 +172,46 @@ class RecoveryRepository:
                     FOREIGN KEY (case_id) REFERENCES cases(case_id)
                 );
 
+                CREATE TABLE IF NOT EXISTS agent_runs (
+                    agent_run_id TEXT PRIMARY KEY,
+                    case_id TEXT NOT NULL,
+                    decision_id TEXT,
+                    idempotency_key TEXT UNIQUE,
+                    status TEXT NOT NULL,
+                    recommended_action TEXT,
+                    final_action TEXT,
+                    final_operational_state TEXT,
+                    driver_type TEXT DEFAULT 'deterministic',
+                    failure_category TEXT,
+                    error_message TEXT,
+                    llm_provider TEXT,
+                    llm_model TEXT,
+                    prompt_version TEXT,
+                    total_tokens INTEGER DEFAULT 0,
+                    llm_latency_ms REAL DEFAULT 0.0,
+                    started_at TEXT NOT NULL,
+                    completed_at TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS agent_steps (
+                    step_id TEXT PRIMARY KEY,
+                    agent_run_id TEXT NOT NULL,
+                    step_index INTEGER NOT NULL,
+                    step_type TEXT NOT NULL,
+                    tool_name TEXT,
+                    input_summary_json TEXT,
+                    output_summary_json TEXT,
+                    status TEXT NOT NULL,
+                    failure_category TEXT,
+                    error_message TEXT,
+                    llm_prompt_tokens INTEGER,
+                    llm_completion_tokens INTEGER,
+                    llm_latency_ms REAL,
+                    started_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    FOREIGN KEY (agent_run_id) REFERENCES agent_runs(agent_run_id)
+                );
+
                 -- Indexes for fast analytics aggregations
                 CREATE INDEX IF NOT EXISTS idx_cases_failure_type ON cases(failure_type);
                 CREATE INDEX IF NOT EXISTS idx_cases_is_sub ON cases(is_subscription);
@@ -179,7 +223,40 @@ class RecoveryRepository:
                 CREATE INDEX IF NOT EXISTS idx_actions_executed_at ON actions(executed_at);
                 CREATE INDEX IF NOT EXISTS idx_outcomes_status ON outcomes(outcome_status);
                 CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp ON outcomes(event_timestamp);
+                CREATE INDEX IF NOT EXISTS idx_agent_runs_case ON agent_runs(case_id);
+                CREATE INDEX IF NOT EXISTS idx_agent_runs_idemp ON agent_runs(idempotency_key);
+                CREATE INDEX IF NOT EXISTS idx_agent_steps_run ON agent_steps(agent_run_id);
             """)
+
+            # Ensure agent_runs columns exist if table was created in an earlier session
+            cur_runs = conn.execute("PRAGMA table_info(agent_runs);")
+            existing_run_cols = {row["name"] for row in cur_runs.fetchall()}
+            if "driver_type" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN driver_type TEXT DEFAULT 'deterministic';")
+            if "failure_category" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN failure_category TEXT;")
+            if "llm_provider" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN llm_provider TEXT;")
+            if "llm_model" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN llm_model TEXT;")
+            if "prompt_version" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN prompt_version TEXT;")
+            if "total_tokens" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN total_tokens INTEGER DEFAULT 0;")
+            if "llm_latency_ms" not in existing_run_cols:
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN llm_latency_ms REAL DEFAULT 0.0;")
+
+            # Ensure agent_steps columns exist if table was created in an earlier session
+            cur_steps = conn.execute("PRAGMA table_info(agent_steps);")
+            existing_step_cols = {row["name"] for row in cur_steps.fetchall()}
+            if "failure_category" not in existing_step_cols:
+                conn.execute("ALTER TABLE agent_steps ADD COLUMN failure_category TEXT;")
+            if "llm_prompt_tokens" not in existing_step_cols:
+                conn.execute("ALTER TABLE agent_steps ADD COLUMN llm_prompt_tokens INTEGER;")
+            if "llm_completion_tokens" not in existing_step_cols:
+                conn.execute("ALTER TABLE agent_steps ADD COLUMN llm_completion_tokens INTEGER;")
+            if "llm_latency_ms" not in existing_step_cols:
+                conn.execute("ALTER TABLE agent_steps ADD COLUMN llm_latency_ms REAL;")
 
     def save_decision(
         self,
@@ -336,6 +413,31 @@ class RecoveryRepository:
         """Retrieves an action execution record by ID."""
         conn = self._get_connection()
         cur = conn.execute("SELECT * FROM actions WHERE action_id = ?;", (action_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+
+        return ActionRecord(
+            action_id=row["action_id"],
+            decision_id=row["decision_id"],
+            case_id=row["case_id"],
+            action=RecoveryAction(row["action"]),
+            idempotency_key=row["idempotency_key"],
+            payload_hash=row["payload_hash"],
+            status=ActionExecutionStatus(row["status"]),
+            cost_paise=row["cost_paise"],
+            provider_reference=row["provider_reference"],
+            error_message=row["error_message"],
+            executed_at=row["executed_at"],
+        )
+
+    def get_action_by_decision(self, decision_id: str) -> Optional[ActionRecord]:
+        """Retrieves the latest action execution record associated with a decision ID."""
+        conn = self._get_connection()
+        cur = conn.execute(
+            "SELECT * FROM actions WHERE decision_id = ? ORDER BY executed_at DESC LIMIT 1;",
+            (decision_id,),
+        )
         row = cur.fetchone()
         if not row:
             return None
@@ -588,3 +690,124 @@ class RecoveryRepository:
             "recovery_by_action": recovery_by_action,
             "execution_failures_by_action": failures_by_action,
         }
+
+    def save_agent_run(self, run_data: Dict[str, Any]) -> None:
+        """Atomically saves an initial agent run record."""
+        conn = self._get_connection()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO agent_runs (
+                    agent_run_id, case_id, decision_id, idempotency_key,
+                    status, recommended_action, final_action, final_operational_state,
+                    driver_type, failure_category, error_message,
+                    llm_provider, llm_model, prompt_version, total_tokens, llm_latency_ms,
+                    started_at, completed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    run_data["agent_run_id"],
+                    run_data["case_id"],
+                    run_data.get("decision_id"),
+                    run_data.get("idempotency_key"),
+                    run_data["status"],
+                    run_data.get("recommended_action"),
+                    run_data.get("final_action"),
+                    run_data.get("final_operational_state"),
+                    run_data.get("driver_type", "deterministic"),
+                    run_data.get("failure_category"),
+                    run_data.get("error_message"),
+                    run_data.get("llm_provider"),
+                    run_data.get("llm_model"),
+                    run_data.get("prompt_version"),
+                    run_data.get("total_tokens", 0),
+                    run_data.get("llm_latency_ms", 0.0),
+                    run_data["started_at"],
+                    run_data.get("completed_at"),
+                ),
+            )
+
+    def update_agent_run(self, agent_run_id: str, **kwargs) -> None:
+        """Updates fields of an existing agent run record."""
+        if not kwargs:
+            return
+        conn = self._get_connection()
+        set_clauses = [f"{k} = ?" for k in kwargs.keys()]
+        values = list(kwargs.values()) + [agent_run_id]
+        with conn:
+            conn.execute(
+                f"UPDATE agent_runs SET {', '.join(set_clauses)} WHERE agent_run_id = ?;",
+                values,
+            )
+
+    def get_agent_run(self, agent_run_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves an agent run by its ID."""
+        conn = self._get_connection()
+        cur = conn.execute(
+            """
+            SELECT * FROM agent_runs WHERE agent_run_id = ?;
+            """,
+            (agent_run_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        return dict(row)
+
+    def get_agent_run_by_idempotency_key(self, idempotency_key: str) -> Optional[Dict[str, Any]]:
+        """Retrieves an agent run by its unique idempotency key."""
+        conn = self._get_connection()
+        cur = conn.execute(
+            """
+            SELECT * FROM agent_runs WHERE idempotency_key = ?;
+            """,
+            (idempotency_key,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        return dict(row)
+
+    def save_agent_step(self, step_data: Dict[str, Any]) -> None:
+        """Appends an auditable step to an agent run."""
+        conn = self._get_connection()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO agent_steps (
+                    step_id, agent_run_id, step_index, step_type,
+                    tool_name, input_summary_json, output_summary_json,
+                    status, failure_category, error_message,
+                    llm_prompt_tokens, llm_completion_tokens, llm_latency_ms,
+                    started_at, completed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    step_data["step_id"],
+                    step_data["agent_run_id"],
+                    step_data["step_index"],
+                    step_data["step_type"],
+                    step_data.get("tool_name"),
+                    step_data.get("input_summary_json"),
+                    step_data.get("output_summary_json"),
+                    step_data["status"],
+                    step_data.get("failure_category"),
+                    step_data.get("error_message"),
+                    step_data.get("llm_prompt_tokens"),
+                    step_data.get("llm_completion_tokens"),
+                    step_data.get("llm_latency_ms"),
+                    step_data["started_at"],
+                    step_data.get("completed_at"),
+                ),
+            )
+
+    def get_agent_steps(self, agent_run_id: str) -> List[Dict[str, Any]]:
+        """Retrieves all steps for an agent run in sequential order."""
+        conn = self._get_connection()
+        cur = conn.execute(
+            """
+            SELECT * FROM agent_steps WHERE agent_run_id = ? ORDER BY step_index ASC;
+            """,
+            (agent_run_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]

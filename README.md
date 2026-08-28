@@ -129,6 +129,12 @@ python scripts/smoke_test_analytics.py
 
 # Test Production Readiness, Correlation ID, and Observability:
 python scripts/smoke_test_production_readiness.py
+
+# Test Autonomous Recovery Agent Workflow & Idempotency:
+python scripts/smoke_test_agent.py
+
+# Test LLM Tool-Calling Recovery Agent Workflow & Idempotency:
+python scripts/smoke_test_llm_agent.py
 ```
 
 ### C. Run Interactive Demo CLI
@@ -137,7 +143,7 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (85 Tests)
+### D. Run Full Test Suite (116 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
@@ -158,6 +164,20 @@ python scripts/run_final_test_evaluation.py
 
 ```
 recoverai/
+├── agent/                      # Autonomous Recovery Agent & LLM Tool Orchestration Layer
+│   ├── models.py               # AgentRun, AgentStep, AgentContext schemas & FailureCategory
+│   ├── result.py               # Structured AgentResult schema
+│   ├── trace.py                # Auditable AgentTrace & ASCII tree formatter
+│   ├── orchestrator.py         # RecoveryAgent public entry point (supports deterministic/LLM)
+│   ├── runtime.py              # Stateful AgentRuntime & LLM-compatible AgentModel driver
+│   ├── errors.py               # Domain exceptions (ActionMismatchError, etc.)
+│   ├── llm/                    # LLM Tool-Calling Orchestrator Package (Milestone 5)
+│   │   ├── base.py             # LLMProvider ABC, LLMMessage, LLMResponse, LLMToolCall
+│   │   ├── prompts.py          # Versioned injection-resistant system prompts & context formatters
+│   │   ├── validator.py        # ToolCallValidator (Hard semantic validation & safety boundaries)
+│   │   ├── model.py            # LLMAgentModel strategy driver
+│   │   └── providers/          # Pluggable MockLLMProvider, OpenAI, Anthropic, Gemini providers
+│   └── tools/                  # Approved tool registry & execution wrappers
 ├── analytics/                  # Merchant Analytics & Observability Layer
 │   ├── models.py               # Observational analytics schemas & query filters
 │   ├── metrics.py              # Exact integer paise calculations & rate utilities
@@ -169,17 +189,19 @@ recoverai/
 │   ├── observability.py        # In-memory thread-safe operational metrics collector
 │   ├── schemas.py              # Strict closed Pydantic request/response contracts
 │   ├── middleware/             # Request correlation (X-Request-ID) & structured logging
-│   ├── routes/                 # API routers (/health, /ready, /model-info, /decisions, /recovery, /analytics, /observability)
+│   ├── routes/                 # API routers (/health, /ready, /model-info, /decisions, /recovery, /analytics, /observability, /agent)
 │   └── services/               # RecoveryDecisionService, OperationsService, ExplanationService
 ├── data/
 │   └── sim_v1/                 # Frozen benchmark dataset (Train: 7k, Val: 1.5k, Test: 1.5k)
 ├── docs/
+│   ├── AGENT_ARCHITECTURE.md   # Recovery Agent v0, tools, decision boundary, and trace guide
 │   ├── ANALYTICS.md            # Observational analytics definitions & guide
 │   ├── API.md                  # Complete Merchant API reference & cURL examples
 │   ├── ARCHITECTURE.md         # Layer decoupling & observable boundary diagrams
 │   ├── CAUSAL_MODEL.md         # Structural logit model & potential outcomes
 │   ├── DECISIONS.md            # Architecture Decision Records (ADRs 001-008)
 │   ├── EVALUATION.md           # Formal evaluation metrics & integer paise math
+│   ├── LLM_AGENT.md            # LLM tool-calling agent architecture, safety & failure taxonomy
 │   ├── ML_SYSTEM.md            # Machine learning decision theory & diagnostics
 │   ├── PRD.md                  # Product requirements & KPI definitions
 │   ├── PRODUCTION_READINESS.md # Production readiness, error envelopes, and correlation architecture
@@ -197,7 +219,7 @@ recoverai/
 ├── models/
 │   └── champion_recovery_model.pkl # Pre-trained champion model artifact (33.80 KB)
 ├── recovery/                   # Recovery Operations Domain & Infrastructure
-│   ├── models.py               # Case, Decision, Action, and Outcome domain models
+│   ├── models.py               # Case, Decision, Action, Outcome, AgentRun records
 │   ├── state_machine.py        # Deterministic state machine & legal transitions
 │   ├── repository.py           # SQLite repository with atomic transactions & busy timeout
 │   ├── executor.py             # Provider dispatcher & registry
@@ -214,9 +236,11 @@ recoverai/
 │   ├── smoke_test_operations.py# Live HTTP operations lifecycle smoke test
 │   ├── smoke_test_analytics.py # Live HTTP analytics smoke test
 │   ├── smoke_test_production_readiness.py # Live HTTP production readiness smoke test
+│   ├── smoke_test_agent.py     # Live HTTP autonomous recovery agent smoke test
+│   ├── smoke_test_llm_agent.py # Live HTTP LLM tool-calling agent smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 85 unit, integration, security, API, operations, analytics, and readiness tests
+└── tests/                      # 116 unit, integration, security, API, operations, analytics, and LLM agent tests
 ```
 
 ---
