@@ -273,3 +273,51 @@ def test_api_agent_recover_with_llm_driver(client):
     assert data["executed_action"] == "retry"
     assert data["execution_status"] == "EXECUTED"
     assert data["total_tokens"] > 0
+
+
+def test_llm_agent_outcome_before_action_rejected_as_policy_violation():
+    """Verify that an LLM attempting to fabricate an outcome before action execution is rejected with POLICY_VIOLATION."""
+    script = [
+        {
+            "tool": "record_recovery_outcome",
+            "arguments": {
+                "case_id": "case_llm_fab_001",
+                "action_id": "act_fake",
+                "decision_id": "dec_fake",
+                "outcome_status": "recovered",
+                "recovered_amount_paise": 500000,
+            },
+        }
+    ]
+    agent = RecoveryAgent(agent_model=LLMAgentModel(provider=MockLLMProvider(scripted_calls=script)))
+
+    case_data = {"case_id": "case_llm_fab_001", "amount_paise": 500000}
+    result = agent.run(case=case_data, driver="llm")
+
+    assert result.status == "failed"
+    assert result.failure_category == FailureCategory.POLICY_VIOLATION.value
+    assert "Cannot record outcome" in (result.error_message or "")
+
+
+def test_llm_agent_summary_tool_does_not_override_decision():
+    """Verify that LLM querying get_recovery_summary does not override the authoritative case decision."""
+    script = [
+        {"tool": "get_recovery_summary", "arguments": {}},
+        {"tool": "get_recovery_decision", "arguments": {"case_id": "case_llm_summ_001"}},
+        {"tool": "execute_recovery_action", "arguments": {"action": "retry", "idempotency_key": "idemp_summ_001"}},
+    ]
+    agent = RecoveryAgent(agent_model=LLMAgentModel(provider=MockLLMProvider(scripted_calls=script)))
+
+    case_data = {
+        "case_id": "case_llm_summ_001",
+        "customer_id": "cust_llm_summ_001",
+        "amount_paise": 500000,
+        "payment_method": "upi",
+        "failure_type": "temporary_failure",
+        "retry_count": 0,
+    }
+    result = agent.run(case=case_data, driver="llm")
+
+    assert result.status == "completed"
+    assert result.recommended_action == "retry"
+    assert result.executed_action == "retry"
