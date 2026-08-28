@@ -516,6 +516,32 @@ Detailed documentation: [`docs/AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) an
 
 ---
 
+### 2.7 Razorpay Webhook Ingestion
+- **Endpoint**: `POST /api/v1/webhooks/razorpay`
+- **Description**: Ingests asynchronous Razorpay payment outcome notifications with HMAC-SHA256 signature verification and durable deduplication.
+- **Headers**:
+  - `X-Razorpay-Signature`: HMAC-SHA256 signature hex.
+  - `X-Razorpay-Event-Id`: Unique event ID.
+- **Supported Events**:
+  - `payment_link.paid` $\to$ Settle case as `RECOVERED`.
+  - `payment_link.expired` / `payment_link.cancelled` $\to$ Settle case as `NOT_RECOVERED`.
+
+---
+
+### 2.8 Razorpay Status Sync & Reconciliation
+- **Endpoint**: `POST /api/v1/recovery/providers/razorpay/sync`
+- **Description**: Actively queries Razorpay TEST API and reconciles case operational states.
+- **Request Body**:
+  ```json
+  {
+    "action_id": "act_09130f199ce3"
+  }
+  ```
+
+Detailed documentation: [`docs/RAZORPAY_INTEGRATION.md`](RAZORPAY_INTEGRATION.md)
+
+---
+
 ## 3. Local Development Commands
 
 ### Start API Server:
@@ -542,9 +568,12 @@ python scripts/smoke_test_agent.py
 
 # Test LLM tool-calling agent workflow & idempotency
 python scripts/smoke_test_llm_agent.py
+
+# Test Razorpay TEST MODE integration (Opt-in)
+python scripts/smoke_test_razorpay.py
 ```
 
-### Run Full Test Suite (116 Tests):
+### Run Full Test Suite (124+ Tests):
 ```bash
 python -m pytest tests/ -v
 ```

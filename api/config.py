@@ -48,6 +48,27 @@ class Settings(BaseModel):
     llm_temperature: float = Field(
         default_factory=lambda: float(os.getenv("RECOVERAI_LLM_TEMPERATURE", "0.0"))
     )
+    payment_provider: Literal["mock", "razorpay_test"] = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_PAYMENT_PROVIDER", "mock").lower()  # type: ignore
+    )
+    razorpay_key_id: Optional[str] = Field(
+        default_factory=lambda: os.getenv("RAZORPAY_KEY_ID")
+    )
+    razorpay_key_secret: Optional[str] = Field(
+        default_factory=lambda: os.getenv("RAZORPAY_KEY_SECRET")
+    )
+    razorpay_base_url: str = Field(
+        default_factory=lambda: os.getenv("RAZORPAY_BASE_URL", "https://api.razorpay.com/v1")
+    )
+    razorpay_timeout_seconds: float = Field(
+        default_factory=lambda: float(os.getenv("RAZORPAY_TIMEOUT_SECONDS", "10.0"))
+    )
+    razorpay_webhook_secret: Optional[str] = Field(
+        default_factory=lambda: os.getenv("RAZORPAY_WEBHOOK_SECRET")
+    )
+    enable_razorpay_smoke: bool = Field(
+        default_factory=lambda: os.getenv("RECOVERAI_ENABLE_RAZORPAY_SMOKE", "false").lower() in ("true", "1")
+    )
 
     @field_validator("port")
     @classmethod

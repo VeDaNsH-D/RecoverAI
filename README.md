@@ -135,6 +135,9 @@ python scripts/smoke_test_agent.py
 
 # Test LLM Tool-Calling Recovery Agent Workflow & Idempotency:
 python scripts/smoke_test_llm_agent.py
+
+# Test Razorpay TEST MODE Provider Integration (Opt-in):
+python scripts/smoke_test_razorpay.py
 ```
 
 ### C. Run Interactive Demo CLI
@@ -143,7 +146,7 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (116 Tests)
+### D. Run Full Test Suite (124+ Tests)
 ```bash
 python -m pytest tests/ -v
 ```

@@ -212,6 +212,17 @@ class RecoveryRepository:
                     FOREIGN KEY (agent_run_id) REFERENCES agent_runs(agent_run_id)
                 );
 
+                CREATE TABLE IF NOT EXISTS webhook_events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    provider_reference TEXT,
+                    case_id TEXT,
+                    action_id TEXT,
+                    processing_status TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    processed_at TEXT NOT NULL
+                );
+
                 -- Indexes for fast analytics aggregations
                 CREATE INDEX IF NOT EXISTS idx_cases_failure_type ON cases(failure_type);
                 CREATE INDEX IF NOT EXISTS idx_cases_is_sub ON cases(is_subscription);
@@ -221,11 +232,13 @@ class RecoveryRepository:
                 CREATE INDEX IF NOT EXISTS idx_actions_action ON actions(action);
                 CREATE INDEX IF NOT EXISTS idx_actions_status ON actions(status);
                 CREATE INDEX IF NOT EXISTS idx_actions_executed_at ON actions(executed_at);
+                CREATE INDEX IF NOT EXISTS idx_actions_provider_ref ON actions(provider_reference);
                 CREATE INDEX IF NOT EXISTS idx_outcomes_status ON outcomes(outcome_status);
                 CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp ON outcomes(event_timestamp);
                 CREATE INDEX IF NOT EXISTS idx_agent_runs_case ON agent_runs(case_id);
                 CREATE INDEX IF NOT EXISTS idx_agent_runs_idemp ON agent_runs(idempotency_key);
                 CREATE INDEX IF NOT EXISTS idx_agent_steps_run ON agent_steps(agent_run_id);
+                CREATE INDEX IF NOT EXISTS idx_webhook_events_ref ON webhook_events(provider_reference);
             """)
 
             # Ensure agent_runs columns exist if table was created in an earlier session
@@ -455,6 +468,77 @@ class RecoveryRepository:
             error_message=row["error_message"],
             executed_at=row["executed_at"],
         )
+
+    def get_action_by_provider_reference(self, provider_reference: str) -> Optional[ActionRecord]:
+        """Retrieves an action execution record by external provider reference (e.g. plink_xxx)."""
+        if not provider_reference:
+            return None
+        conn = self._get_connection()
+        cur = conn.execute(
+            "SELECT * FROM actions WHERE provider_reference = ? ORDER BY executed_at DESC LIMIT 1;",
+            (provider_reference,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+
+        return ActionRecord(
+            action_id=row["action_id"],
+            decision_id=row["decision_id"],
+            case_id=row["case_id"],
+            action=RecoveryAction(row["action"]),
+            idempotency_key=row["idempotency_key"],
+            payload_hash=row["payload_hash"],
+            status=ActionExecutionStatus(row["status"]),
+            cost_paise=row["cost_paise"],
+            provider_reference=row["provider_reference"],
+            error_message=row["error_message"],
+            executed_at=row["executed_at"],
+        )
+
+    def is_webhook_event_processed(self, event_id: str) -> bool:
+        """Checks if a webhook event has already been durably recorded and successfully processed or definitively ignored."""
+        if not event_id:
+            return False
+        conn = self._get_connection()
+        cur = conn.execute(
+            "SELECT 1 FROM webhook_events WHERE event_id = ? AND processing_status NOT LIKE 'error%';",
+            (event_id,),
+        )
+        return cur.fetchone() is not None
+
+    def save_webhook_event(
+        self,
+        event_id: str,
+        event_type: str,
+        provider_reference: Optional[str],
+        case_id: Optional[str],
+        action_id: Optional[str],
+        processing_status: str,
+        payload_json: str,
+        processed_at: str,
+    ) -> None:
+        """Durably logs a received webhook event for idempotency and auditability."""
+        conn = self._get_connection()
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO webhook_events (
+                    event_id, event_type, provider_reference, case_id, action_id,
+                    processing_status, payload_json, processed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    event_id,
+                    event_type,
+                    provider_reference,
+                    case_id,
+                    action_id,
+                    processing_status,
+                    payload_json,
+                    processed_at,
+                ),
+            )
 
     def record_action_execution(
         self,

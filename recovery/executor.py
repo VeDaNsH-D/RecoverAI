@@ -13,6 +13,7 @@ from recovery.actions.payment_link import PaymentLinkActionProvider
 from recovery.actions.reminder import ReminderActionProvider
 from recovery.actions.escalate import EscalateActionProvider
 from recovery.actions.no_action import NoActionProvider
+from api.config import settings
 
 
 class ActionExecutor:
@@ -21,10 +22,17 @@ class ActionExecutor:
     """
 
     def __init__(self):
+        # Select payment link provider based on settings
+        if settings.payment_provider == "razorpay_test":
+            from recovery.providers.razorpay.payment_link import RazorpayPaymentLinkProvider
+            payment_link_prov: BaseActionProvider = RazorpayPaymentLinkProvider()
+        else:
+            payment_link_prov = PaymentLinkActionProvider()
+
         self._providers: Dict[RecoveryAction, BaseActionProvider] = {
             RecoveryAction.NO_ACTION: NoActionProvider(),
             RecoveryAction.RETRY: RetryActionProvider(),
-            RecoveryAction.PAYMENT_LINK: PaymentLinkActionProvider(),
+            RecoveryAction.PAYMENT_LINK: payment_link_prov,
             RecoveryAction.REMINDER: ReminderActionProvider(),
             RecoveryAction.ESCALATE: EscalateActionProvider(),
         }
