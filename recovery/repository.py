@@ -49,6 +49,7 @@ class RecoveryRepository:
         if not hasattr(self._local, "conn") or self._local.conn is None:
             conn = sqlite3.connect(self._connect_path, uri=self._uri, timeout=30.0, check_same_thread=False)
             conn.execute("PRAGMA foreign_keys = ON;")
+            conn.execute("PRAGMA busy_timeout = 5000;")
             if not self.is_memory:
                 conn.execute("PRAGMA journal_mode = WAL;")
             conn.row_factory = sqlite3.Row
@@ -56,13 +57,32 @@ class RecoveryRepository:
             self._create_tables(conn)
         return self._local.conn
 
+    def is_ready(self) -> bool:
+        """Verifies database connectivity and responsiveness."""
+        try:
+            conn = self._get_connection()
+            cur = conn.execute("SELECT 1;")
+            row = cur.fetchone()
+            return row is not None and row[0] == 1
+        except Exception:
+            return False
+
+    def close(self) -> None:
+        """Closes thread-local connection."""
+        if hasattr(self._local, "conn") and self._local.conn is not None:
+            try:
+                self._local.conn.close()
+            except Exception:
+                pass
+            self._local.conn = None
+
     def _init_db(self) -> None:
         """Initializes tables and unique indexes."""
         conn = self._get_connection()
         self._create_tables(conn)
 
     def _create_tables(self, conn: sqlite3.Connection) -> None:
-        """Creates tables idempotently."""
+        """Creates tables and indexes idempotently, ensuring schema migration for legacy DB files."""
         with conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS cases (
@@ -72,6 +92,10 @@ class RecoveryRepository:
                     current_state TEXT NOT NULL,
                     decision_id TEXT NOT NULL,
                     recommended_action TEXT NOT NULL,
+                    payment_method TEXT DEFAULT 'upi',
+                    is_subscription INTEGER DEFAULT 0,
+                    failure_type TEXT DEFAULT 'temporary_failure',
+                    retry_count INTEGER DEFAULT 0,
                     last_action_id TEXT,
                     last_action_status TEXT,
                     outcome_status TEXT,
@@ -79,7 +103,21 @@ class RecoveryRepository:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+            """)
 
+            # Ensure columns exist if table was created in an earlier session
+            cur = conn.execute("PRAGMA table_info(cases);")
+            existing_cols = {row["name"] for row in cur.fetchall()}
+            if "payment_method" not in existing_cols:
+                conn.execute("ALTER TABLE cases ADD COLUMN payment_method TEXT DEFAULT 'upi';")
+            if "is_subscription" not in existing_cols:
+                conn.execute("ALTER TABLE cases ADD COLUMN is_subscription INTEGER DEFAULT 0;")
+            if "failure_type" not in existing_cols:
+                conn.execute("ALTER TABLE cases ADD COLUMN failure_type TEXT DEFAULT 'temporary_failure';")
+            if "retry_count" not in existing_cols:
+                conn.execute("ALTER TABLE cases ADD COLUMN retry_count INTEGER DEFAULT 0;")
+
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS decisions (
                     decision_id TEXT PRIMARY KEY,
                     case_id TEXT NOT NULL,
@@ -129,9 +167,28 @@ class RecoveryRepository:
                     FOREIGN KEY (decision_id) REFERENCES decisions(decision_id),
                     FOREIGN KEY (case_id) REFERENCES cases(case_id)
                 );
+
+                -- Indexes for fast analytics aggregations
+                CREATE INDEX IF NOT EXISTS idx_cases_failure_type ON cases(failure_type);
+                CREATE INDEX IF NOT EXISTS idx_cases_is_sub ON cases(is_subscription);
+                CREATE INDEX IF NOT EXISTS idx_cases_retry_count ON cases(retry_count);
+                CREATE INDEX IF NOT EXISTS idx_cases_created_at ON cases(created_at);
+                CREATE INDEX IF NOT EXISTS idx_cases_state ON cases(current_state);
+                CREATE INDEX IF NOT EXISTS idx_actions_action ON actions(action);
+                CREATE INDEX IF NOT EXISTS idx_actions_status ON actions(status);
+                CREATE INDEX IF NOT EXISTS idx_actions_executed_at ON actions(executed_at);
+                CREATE INDEX IF NOT EXISTS idx_outcomes_status ON outcomes(outcome_status);
+                CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp ON outcomes(event_timestamp);
             """)
 
-    def save_decision(self, decision: DecisionRecord) -> None:
+    def save_decision(
+        self,
+        decision: DecisionRecord,
+        payment_method: str = "upi",
+        is_subscription: bool = False,
+        failure_type: str = "temporary_failure",
+        retry_count: int = 0,
+    ) -> None:
         """
         Atomically persists a decision record and initializes/updates the case in DECIDED state.
         """
@@ -142,12 +199,18 @@ class RecoveryRepository:
                 """
                 INSERT INTO cases (
                     case_id, customer_id, amount_paise, current_state,
-                    decision_id, recommended_action, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    decision_id, recommended_action, payment_method,
+                    is_subscription, failure_type, retry_count,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(case_id) DO UPDATE SET
                     decision_id=excluded.decision_id,
                     recommended_action=excluded.recommended_action,
                     current_state=excluded.current_state,
+                    payment_method=excluded.payment_method,
+                    is_subscription=excluded.is_subscription,
+                    failure_type=excluded.failure_type,
+                    retry_count=excluded.retry_count,
                     updated_at=excluded.updated_at;
                 """,
                 (
@@ -157,6 +220,10 @@ class RecoveryRepository:
                     CaseState.DECIDED.value,
                     decision.decision_id,
                     decision.recommended_action.value,
+                    payment_method,
+                    1 if is_subscription else 0,
+                    failure_type,
+                    retry_count,
                     decision.created_at,
                     decision.created_at,
                 ),
@@ -231,6 +298,10 @@ class RecoveryRepository:
             current_state=CaseState(row["current_state"]),
             decision_id=row["decision_id"],
             recommended_action=RecoveryAction(row["recommended_action"]),
+            payment_method=row["payment_method"] if "payment_method" in row.keys() else None,
+            is_subscription=bool(row["is_subscription"]) if "is_subscription" in row.keys() else False,
+            failure_type=row["failure_type"] if "failure_type" in row.keys() else None,
+            retry_count=row["retry_count"] if "retry_count" in row.keys() else 0,
             last_action_id=row["last_action_id"],
             last_action_status=ActionExecutionStatus(row["last_action_status"]) if row["last_action_status"] else None,
             outcome_status=OutcomeStatus(row["outcome_status"]) if row["outcome_status"] else None,

@@ -32,7 +32,10 @@ async def create_recovery_decision(request: PaymentCaseRequest):
         )
 
     try:
-        return recovery_service.process_decision(request)
+        decision = recovery_service.process_decision(request)
+        from api.observability import observability_registry
+        observability_registry.record_decision()
+        return decision
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

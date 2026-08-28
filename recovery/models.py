@@ -97,6 +97,10 @@ class RecoveryCaseRecord(BaseModel):
     current_state: CaseState
     decision_id: str
     recommended_action: RecoveryAction
+    payment_method: Optional[str] = None
+    is_subscription: bool = False
+    failure_type: Optional[str] = None
+    retry_count: int = 0
     last_action_id: Optional[str] = None
     last_action_status: Optional[ActionExecutionStatus] = None
     outcome_status: Optional[OutcomeStatus] = None

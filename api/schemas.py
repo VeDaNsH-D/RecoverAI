@@ -253,10 +253,56 @@ class RecoverySummaryResponse(BaseModel):
     timestamp: str
 
 
+class ReadinessResponse(BaseModel):
+    """Deep readiness probe verifying critical runtime dependencies."""
+    model_config = ConfigDict(frozen=True)
+
+    status: str = Field(description="Readiness status (ready or not_ready)")
+    model_status: str = Field(description="Champion recovery model status (ready or unavailable)")
+    database_status: str = Field(description="Database connectivity status (connected or disconnected)")
+    model_family: Optional[str] = Field(default=None, description="Active champion model family")
+    timestamp: str = Field(description="ISO 8601 readiness check timestamp")
+
+
+class ObservabilityMetricsResponse(BaseModel):
+    """Operational telemetry and traffic statistics."""
+    model_config = ConfigDict(frozen=True)
+
+    uptime_seconds: float = Field(description="Process uptime in seconds")
+    requests_total: int = Field(description="Total HTTP requests processed")
+    responses_2xx: int = Field(description="Total 2xx success responses")
+    responses_4xx: int = Field(description="Total 4xx client error responses")
+    responses_5xx: int = Field(description="Total 5xx server error responses")
+    avg_latency_ms: float = Field(description="Average request processing duration in ms")
+    decisions_generated: int = Field(description="Total recovery decisions generated")
+    actions_dispatched: int = Field(description="Total action provider executions dispatched")
+    execution_failures: int = Field(description="Total technical execution failures")
+    outcomes_recorded: int = Field(description="Total observed outcomes settled")
+    timestamp: str = Field(description="ISO 8601 metrics collection timestamp")
+
+
+class ErrorDetail(BaseModel):
+    """Structured error object."""
+    model_config = ConfigDict(frozen=True)
+
+    code: str = Field(description="Machine-readable error classification code")
+    message: str = Field(description="Human-readable error description")
+    request_id: Optional[str] = Field(default=None, description="Correlated request ID for troubleshooting")
+
+
+class ErrorEnvelope(BaseModel):
+    """Standardized top-level API error response format."""
+    model_config = ConfigDict(frozen=True)
+
+    error: ErrorDetail = Field(description="Structured error details")
+    timestamp: str = Field(description="ISO 8601 error timestamp")
+
+
 class ErrorResponse(BaseModel):
-    """Standardized API error response format."""
+    """Backward-compatible error response format."""
     model_config = ConfigDict(frozen=True)
 
     error: str = Field(description="Error category code")
     detail: str = Field(description="Human-readable explanation of error")
     timestamp: str = Field(description="ISO 8601 error timestamp")
+    request_id: Optional[str] = Field(default=None, description="Request correlation ID")
