@@ -130,7 +130,7 @@
   </div>
 
   <!-- Global Alert Banner Container -->
-  <div id="alertBannerContainer" style="position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:90;width:540px;"></div>
+  <div id="alertBannerContainer" style="position:absolute;top:65px;left:50%;transform:translateX(-50%);z-index:90;width:520px;"></div>
 
   <!-- =========================================================================
        MAIN VIEWPORT CONTAINER
@@ -155,39 +155,39 @@
         <svg class="dendrogram-svg-overlay" id="dendrogramSvg"></svg>
         <div class="dendrogram-layout">
 
-          <!-- Core Entity Orb -->
+          <!-- 3D Sphere Entity Orb (Matches Video 00:11) -->
           <div class="entity-orb-node" id="treeEntityOrb">
             <div class="entity-orb-glow">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              <div class="entity-orb-inner-pulse"></div>
             </div>
             <div class="entity-title-box">
               <div class="entity-name" id="treeEntityName">Case case_••••</div>
               <div class="entity-id" id="treeEntityCustomer">cust_••••91A2</div>
-              <div class="entity-gap-tag" id="treeEntityState">DECIDED</div>
+              <div class="entity-state-badge state-badge-RECOVERED" id="treeEntityState">RECOVERED</div>
             </div>
           </div>
 
           <!-- Branching Categories Column -->
           <div class="dendrogram-branch-col">
-            <div class="branch-card active" data-branch="context">
+            <div class="branch-card active" data-branch="candidates">
               <div class="branch-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Candidate Policy Traces
+              </div>
+              <div class="branch-count text-emerald" id="branchCountCandidates">5</div>
+            </div>
+
+            <div class="branch-card" data-branch="context">
+              <div class="branch-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                 Incident Context
               </div>
               <div class="branch-count" id="branchCountContext">3</div>
             </div>
 
-            <div class="branch-card" data-branch="candidates">
-              <div class="branch-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                Candidate Action Matrix
-              </div>
-              <div class="branch-count text-emerald" id="branchCountCandidates">5</div>
-            </div>
-
             <div class="branch-card" data-branch="execution">
               <div class="branch-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                 Execution Telemetry
               </div>
               <div class="branch-count" id="branchCountExecution">1</div>
@@ -195,7 +195,7 @@
 
             <div class="branch-card" data-branch="settlement">
               <div class="branch-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 Settlement Evidence
               </div>
               <div class="branch-count text-cyan" id="branchCountSettlement">1</div>
@@ -437,9 +437,9 @@
           </div>
         </div>
         <div class="radial-svg-box">
-          <svg width="76" height="76" viewBox="0 0 76 76">
-            <circle class="radial-circle-bg" cx="38" cy="38" r="30"></circle>
-            <circle class="radial-circle-fill" id="dtRadialCircleFill" cx="38" cy="38" r="30" stroke-dasharray="188.5" stroke-dashoffset="45"></circle>
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="radial-circle-bg" cx="36" cy="36" r="28"></circle>
+            <circle class="radial-circle-fill" id="dtRadialCircleFill" cx="36" cy="36" r="28" stroke-dasharray="175.9" stroke-dashoffset="42"></circle>
           </svg>
         </div>
       </div>
@@ -494,9 +494,9 @@
       </div>
 
       <!-- Chronological Operational Audit Trail -->
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      <div style="display:flex;flex-direction:column;gap:0.4rem;">
         <div class="drawer-metric-label">Operational Audit Timeline</div>
-        <div id="timelineContainer" style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div id="timelineContainer" style="display:flex;flex-direction:column;gap:0.45rem;">
           <!-- Dynamically populated -->
         </div>
       </div>

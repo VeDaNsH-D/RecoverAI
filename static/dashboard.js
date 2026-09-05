@@ -21,10 +21,10 @@
     camera: {
       x: 0,
       y: 0,
-      scale: 1,
+      scale: 0.85,
       targetX: 0,
       targetY: 0,
-      targetScale: 1,
+      targetScale: 0.85,
       isDragging: false,
       startX: 0,
       startY: 0,
@@ -36,6 +36,7 @@
     hoveredNode: null,
     activeTimePeriod: "all",
     particles: [],
+    activeFilterCluster: null,
     queue: {
       page: 0,
       limit: 20,
@@ -51,13 +52,13 @@
     pendingSyncSubId: null,
   };
 
-  // Cluster Definitions matching cosmic visual design
+  // Compact, Responsive Cluster Definitions matching reference video
   const CLUSTERS = [
-    { id: "subscription", label: "Subscriptions", color: "#a78bfa", glow: "rgba(167, 139, 250, 0.4)", radius: 28, angle: -Math.PI * 0.7, dist: 220, count: 0 },
-    { id: "direct", label: "Direct Checkouts", color: "#38bdf8", glow: "rgba(56, 189, 248, 0.4)", radius: 26, angle: -Math.PI * 0.2, dist: 240, count: 0 },
-    { id: "high_value", label: "High-Value Capital", color: "#fbbf24", glow: "rgba(251, 191, 36, 0.4)", radius: 30, angle: Math.PI * 0.3, dist: 230, count: 0 },
-    { id: "tech_fail", label: "Technical Gateways", color: "#fb7185", glow: "rgba(251, 113, 133, 0.4)", radius: 24, angle: Math.PI * 0.8, dist: 250, count: 0 },
-    { id: "settled", label: "Verified Recovered", color: "#34d399", glow: "rgba(52, 211, 153, 0.4)", radius: 32, angle: Math.PI * 1.25, dist: 210, count: 0 },
+    { id: "subscription", label: "Subscriptions", color: "#a78bfa", glow: "rgba(167, 139, 250, 0.45)", radius: 22, angle: -Math.PI * 0.72, dist: 145 },
+    { id: "direct", label: "Direct Checkouts", color: "#38bdf8", glow: "rgba(56, 189, 248, 0.45)", radius: 20, angle: -Math.PI * 0.18, dist: 155 },
+    { id: "high_value", label: "High-Value Capital", color: "#fbbf24", glow: "rgba(251, 191, 36, 0.45)", radius: 24, angle: Math.PI * 0.28, dist: 150 },
+    { id: "tech_fail", label: "Technical Gateways", color: "#fb7185", glow: "rgba(251, 113, 133, 0.45)", radius: 19, angle: Math.PI * 0.78, dist: 160 },
+    { id: "settled", label: "Verified Recovered", color: "#34d399", glow: "rgba(52, 211, 153, 0.45)", radius: 26, angle: Math.PI * 1.22, dist: 140 },
   ];
 
   // =========================================================================
@@ -145,6 +146,15 @@
   let graphNodes = [];
   let graphLinks = [];
 
+  function autoFitCamera() {
+    if (!canvasWidth || !canvasHeight) return;
+    const minDim = Math.min(canvasWidth, canvasHeight);
+    const fitScale = Math.min(1.0, Math.max(0.65, minDim / 750));
+    state.camera.targetScale = fitScale;
+    state.camera.targetX = 0;
+    state.camera.targetY = 0;
+  }
+
   function initCanvas() {
     canvas = document.getElementById("constellationCanvas");
     if (!canvas) return;
@@ -158,6 +168,7 @@
       canvas.style.width = canvasWidth + "px";
       canvas.style.height = canvasHeight + "px";
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      autoFitCamera();
     }
     window.addEventListener("resize", resize);
     resize();
@@ -169,14 +180,14 @@
     canvas.addEventListener("wheel", onWheel, { passive: false });
     canvas.addEventListener("click", onCanvasClick);
 
-    // Initialize Cosmic Background Particles
+    // Cosmic Particles
     state.particles = [];
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 70; i++) {
       state.particles.push({
-        x: (Math.random() - 0.5) * 1600,
-        y: (Math.random() - 0.5) * 1200,
-        size: Math.random() * 1.8 + 0.5,
-        alpha: Math.random() * 0.6 + 0.2,
+        x: (Math.random() - 0.5) * 1400,
+        y: (Math.random() - 0.5) * 1000,
+        size: Math.random() * 1.5 + 0.5,
+        alpha: Math.random() * 0.5 + 0.2,
         speed: Math.random() * 0.2 + 0.05,
       });
     }
@@ -188,14 +199,14 @@
     graphNodes = [];
     graphLinks = [];
 
-    // 1. Central Core Hub Node (Sun / Constitution)
+    // 1. Central Core Hub Node
     const core = {
       id: "core_recoverai",
       type: "core",
-      label: "RecoverAI Revenue Engine",
+      label: "RecoverAI Core",
       x: 0,
       y: 0,
-      radius: 44,
+      radius: 34,
       color: "#eab308",
       glow: "rgba(234, 179, 8, 0.5)",
       pulse: 0,
@@ -219,7 +230,7 @@
         pulse: Math.random() * Math.PI,
       };
       graphNodes.push(cNode);
-      graphLinks.push({ from: core, to: cNode, color: c.color, energyPulses: [0.2, 0.6, 0.9] });
+      graphLinks.push({ from: core, to: cNode, color: c.color, energyPulses: [0.2, 0.65] });
     });
 
     // 3. Child Case Nodes distributed around their respective clusters
@@ -234,14 +245,15 @@
         const parentCluster = graphNodes.find((n) => n.id === `cluster_${clusterId}`);
         if (!parentCluster) return;
 
-        const subAngle = (idx * 0.7) + (Math.random() * 0.2);
-        const subDist = 65 + (Math.random() * 55);
+        const subAngle = (idx * 0.75) + (Math.random() * 0.2);
+        const subDist = 42 + (Math.random() * 38);
         const nx = parentCluster.x + Math.cos(subAngle) * subDist;
         const ny = parentCluster.y + Math.sin(subAngle) * subDist;
 
         const caseNode = {
           id: item.case_id,
           type: "case",
+          clusterId: clusterId,
           caseData: item,
           label: maskCustomerId(item.customer_id),
           amount: item.amount_paise,
@@ -249,7 +261,7 @@
           action: item.recommended_action,
           x: nx,
           y: ny,
-          radius: Math.max(7, Math.min(15, 6 + Math.log10(item.amount_paise / 1000 + 1) * 3)),
+          radius: Math.max(5, Math.min(10, 5 + Math.log10(item.amount_paise / 1000 + 1) * 2)),
           color: parentCluster.color,
           glow: parentCluster.glow,
           pulse: Math.random() * Math.PI,
@@ -265,10 +277,9 @@
     if (animFrameId) cancelAnimationFrame(animFrameId);
 
     function loop() {
-      // Smooth Camera LERP
-      state.camera.x += (state.camera.targetX - state.camera.x) * 0.1;
-      state.camera.y += (state.camera.targetY - state.camera.y) * 0.1;
-      state.camera.scale += (state.camera.targetScale - state.camera.scale) * 0.1;
+      state.camera.x += (state.camera.targetX - state.camera.x) * 0.12;
+      state.camera.y += (state.camera.targetY - state.camera.y) * 0.12;
+      state.camera.scale += (state.camera.targetScale - state.camera.scale) * 0.12;
 
       if (state.activeView === "view-constellation") {
         renderCanvas();
@@ -294,48 +305,50 @@
     // 1. Draw Cosmic Star Dust Particles
     state.particles.forEach((p) => {
       ctx.beginPath();
-      ctx.arc(p.x, p.y + Math.sin(now * p.speed + p.x) * 6, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(148, 180, 220, ${p.alpha * 0.6})`;
+      ctx.arc(p.x, p.y + Math.sin(now * p.speed + p.x) * 4, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(148, 180, 220, ${p.alpha * 0.5})`;
       ctx.fill();
     });
 
     // 2. Draw Orbital Concentric Distance Rings
-    [210, 230, 250].forEach((r, idx) => {
+    [140, 150, 160].forEach((r, idx) => {
       ctx.beginPath();
       ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(148, 163, 184, ${0.04 + idx * 0.02})`;
+      ctx.strokeStyle = `rgba(148, 163, 184, ${0.03 + idx * 0.015})`;
       ctx.lineWidth = 1;
-      ctx.setLineDash([4, 8]);
+      ctx.setLineDash([4, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
     });
 
     // 3. Draw Connecting Bezier Filaments & Flowing Energy Pulses
     graphLinks.forEach((link) => {
-      const isHovered = state.hoveredNode && (state.hoveredNode === link.from || state.hoveredNode === link.to);
-      const strokeAlpha = isHovered ? 0.7 : (link.from.type === "core" ? 0.25 : 0.12);
+      const isFiltered = state.activeFilterCluster && (link.to.clusterId !== state.activeFilterCluster && link.from.clusterId !== state.activeFilterCluster);
+      if (isFiltered) return;
 
-      // Curved Bezier filament
+      const isHovered = state.hoveredNode && (state.hoveredNode === link.from || state.hoveredNode === link.to);
+      const strokeAlpha = isHovered ? 0.75 : (link.from.type === "core" ? 0.28 : 0.14);
+
       ctx.beginPath();
       ctx.moveTo(link.from.x, link.from.y);
-      const midX = (link.from.x + link.to.x) / 2 + (link.to.y - link.from.y) * 0.1;
-      const midY = (link.from.y + link.to.y) / 2 + (link.from.x - link.to.x) * 0.1;
+      const midX = (link.from.x + link.to.x) / 2 + (link.to.y - link.from.y) * 0.08;
+      const midY = (link.from.y + link.to.y) / 2 + (link.from.x - link.to.x) * 0.08;
       ctx.quadraticCurveTo(midX, midY, link.to.x, link.to.y);
       ctx.strokeStyle = isHovered ? link.color : `rgba(148, 163, 184, ${strokeAlpha})`;
-      ctx.lineWidth = isHovered ? 2.5 : 1.2;
+      ctx.lineWidth = isHovered ? 2 : 1;
       ctx.stroke();
 
       // Energy Pulses along the curve
       link.energyPulses.forEach((pulseOffset, pIdx) => {
-        const t = (now * 0.4 + pulseOffset + pIdx * 0.33) % 1.0;
+        const t = (now * 0.35 + pulseOffset + pIdx * 0.5) % 1.0;
         const px = Math.pow(1 - t, 2) * link.from.x + 2 * (1 - t) * t * midX + Math.pow(t, 2) * link.to.x;
         const py = Math.pow(1 - t, 2) * link.from.y + 2 * (1 - t) * t * midY + Math.pow(t, 2) * link.to.y;
 
         ctx.beginPath();
-        ctx.arc(px, py, isHovered ? 3.5 : 2, 0, Math.PI * 2);
+        ctx.arc(px, py, isHovered ? 3 : 1.8, 0, Math.PI * 2);
         ctx.fillStyle = link.color;
         ctx.shadowColor = link.color;
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.fill();
         ctx.shadowBlur = 0;
       });
@@ -343,27 +356,29 @@
 
     // 4. Draw Graph Nodes
     graphNodes.forEach((node) => {
+      const isFiltered = state.activeFilterCluster && node.clusterId && node.clusterId !== state.activeFilterCluster;
+      if (isFiltered) return;
+
       const isHovered = state.hoveredNode === node;
-      const pulseSize = Math.sin(now * 2 + node.pulse) * 3;
+      const pulseSize = Math.sin(now * 2 + node.pulse) * 2;
 
       if (node.type === "core") {
-        // Sun / Hub with Radiating Corona & Rotating Rings
+        // Sun Hub
         ctx.save();
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 14 + pulseSize, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, node.radius + 10 + pulseSize, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(234, 179, 8, 0.08)";
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, node.radius + 5, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(234, 179, 8, 0.35)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 6]);
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([5, 5]);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Core Glowing Sun Gradient
-        const grad = ctx.createRadialGradient(node.x - 8, node.y - 8, 4, node.x, node.y, node.radius);
+        const grad = ctx.createRadialGradient(node.x - 6, node.y - 6, 3, node.x, node.y, node.radius);
         grad.addColorStop(0, "#fef08a");
         grad.addColorStop(0.4, "#eab308");
         grad.addColorStop(1, "#ca8a04");
@@ -372,46 +387,44 @@
         ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.shadowColor = "rgba(234, 179, 8, 0.8)";
-        ctx.shadowBlur = 24;
+        ctx.shadowBlur = 20;
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Inner Core Icon
-        ctx.fillStyle = "#05070a";
-        ctx.font = "bold 11px ui-monospace, sans-serif";
+        ctx.fillStyle = "#020609";
+        ctx.font = "bold 9px ui-monospace, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("RECOVERAI", node.x, node.y - 4);
-        ctx.font = "9px ui-monospace, sans-serif";
-        ctx.fillText("CORE", node.x, node.y + 8);
+        ctx.fillText("RECOVERAI", node.x, node.y - 3);
+        ctx.font = "8px ui-monospace, sans-serif";
+        ctx.fillText("CORE", node.x, node.y + 7);
         ctx.restore();
 
       } else if (node.type === "cluster") {
-        // Orbiting Cluster Orbs
+        // 3D Sphere Orbiting Clusters
         ctx.save();
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 8 + (isHovered ? 4 : 0), 0, Math.PI * 2);
-        ctx.fillStyle = node.glow.replace("0.4", "0.12");
+        ctx.arc(node.x, node.y, node.radius + 6 + (isHovered ? 3 : 0), 0, Math.PI * 2);
+        ctx.fillStyle = node.glow.replace("0.45", "0.14");
         ctx.fill();
 
-        const grad = ctx.createRadialGradient(node.x - 6, node.y - 6, 2, node.x, node.y, node.radius);
+        const grad = ctx.createRadialGradient(node.x - 5, node.y - 5, 2, node.x, node.y, node.radius);
         grad.addColorStop(0, "#ffffff");
-        grad.addColorStop(0.4, node.color);
-        grad.addColorStop(1, "rgba(10, 18, 26, 0.9)");
+        grad.addColorStop(0.35, node.color);
+        grad.addColorStop(0.9, "rgba(8, 15, 23, 0.95)");
 
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.shadowColor = node.color;
-        ctx.shadowBlur = isHovered ? 20 : 12;
+        ctx.shadowBlur = isHovered ? 18 : 10;
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Category Tag Badge
-        ctx.font = "bold 10px -apple-system, sans-serif";
+        ctx.font = "bold 9px -apple-system, sans-serif";
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
-        ctx.fillText(node.label, node.x, node.y + node.radius + 14);
+        ctx.fillText(node.label, node.x, node.y + node.radius + 12);
         ctx.restore();
 
       } else {
@@ -421,15 +434,15 @@
         ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         ctx.fillStyle = isHovered ? "#ffffff" : node.color;
         ctx.shadowColor = node.color;
-        ctx.shadowBlur = isHovered ? 16 : 6;
+        ctx.shadowBlur = isHovered ? 14 : 5;
         ctx.fill();
         ctx.shadowBlur = 0;
 
         if (isHovered) {
           ctx.beginPath();
-          ctx.arc(node.x, node.y, node.radius + 5, 0, Math.PI * 2);
+          ctx.arc(node.x, node.y, node.radius + 4, 0, Math.PI * 2);
           ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1.2;
           ctx.stroke();
         }
         ctx.restore();
@@ -472,10 +485,11 @@
     if (state.activeView !== "view-constellation" || !canvas) return;
     const pos = getCanvasMousePos(e);
 
-    // Find closest node
     let found = null;
     for (let i = graphNodes.length - 1; i >= 0; i--) {
       const node = graphNodes[i];
+      if (state.activeFilterCluster && node.clusterId && node.clusterId !== state.activeFilterCluster) continue;
+
       const dx = pos.x - node.x;
       const dy = pos.y - node.y;
       if (dx * dx + dy * dy < (node.radius + 6) * (node.radius + 6)) {
@@ -517,19 +531,17 @@
   function onWheel(e) {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-    state.camera.targetScale = Math.max(0.4, Math.min(2.8, state.camera.targetScale * zoomFactor));
+    state.camera.targetScale = Math.max(0.4, Math.min(2.5, state.camera.targetScale * zoomFactor));
   }
 
-  function onCanvasClick(e) {
+  function onCanvasClick() {
     if (state.hoveredNode) {
       const node = state.hoveredNode;
       if (node.type === "cluster") {
-        // Smoothly pan & zoom to cluster
-        state.camera.targetX = -node.x * 1.5;
-        state.camera.targetY = -node.y * 1.5;
-        state.camera.targetScale = 1.6;
+        state.camera.targetX = -node.x * 1.3;
+        state.camera.targetY = -node.y * 1.3;
+        state.camera.targetScale = 1.4;
       } else if (node.type === "case") {
-        // Inspect Case & open Causal Tree view
         inspectCase(node.caseData.case_id);
       }
     }
@@ -544,12 +556,17 @@
 
     document.getElementById("treeEntityName").textContent = `Case ${caseItem.case_id}`;
     document.getElementById("treeEntityCustomer").textContent = maskCustomerId(caseItem.customer_id);
-    document.getElementById("treeEntityState").textContent = caseItem.current_state;
+
+    // Dynamic State Badge with Correct Theme Color (Green for RECOVERED, Cyan for DECIDED, Amber for PENDING, Red for FAILED)
+    const stateEl = document.getElementById("treeEntityState");
+    if (stateEl) {
+      stateEl.className = `entity-state-badge state-badge-${caseItem.current_state}`;
+      stateEl.textContent = caseItem.current_state;
+    }
 
     const leafCol = document.getElementById("dendrogramLeafCol");
     if (!leafCol) return;
 
-    // Build branch-specific leaf cards
     let leavesHtml = "";
     if (state.selectedBranch === "candidates") {
       const actions = [
@@ -669,6 +686,8 @@
       } else if (state.cases && state.cases.length > 0) {
         inspectCase(state.cases[0].case_id, false);
       }
+    } else if (viewId === "view-constellation") {
+      autoFitCamera();
     }
   }
 
@@ -694,14 +713,14 @@
       document.getElementById("modalCaseSubtitle").textContent = `Customer: ${maskCustomerId(c.customer_id)} • Created: ${formatTimestamp(c.created_at)}`;
       document.getElementById("dtCategoryTag").textContent = c.is_subscription ? "SUBSCRIPTION BILLING CYCLE" : "ONE-OFF CHECKOUT";
 
-      // Update Radial Recovery Probability Gauge (00:18 in video)
+      // Radial Recovery Probability Gauge (00:18)
       const prob = detail.decision_forecast ? detail.decision_forecast.recovery_probability : 0.76;
       const probPct = Math.round(prob * 100);
       document.getElementById("dtGaugeScore").textContent = `${probPct}%`;
 
       const circle = document.getElementById("dtRadialCircleFill");
       if (circle) {
-        const circumference = 2 * Math.PI * 30; // 188.5
+        const circumference = 2 * Math.PI * 28; // ~175.9
         const offset = circumference - (prob * circumference);
         circle.style.strokeDasharray = `${circumference}`;
         circle.style.strokeDashoffset = `${offset}`;
@@ -711,9 +730,14 @@
       document.getElementById("dtAmount").textContent = formatPaiseINR(c.amount_paise);
       document.getElementById("dtDecCost").textContent = formatPaiseINR(detail.decision_forecast?.action_cost_paise || 2200);
       document.getElementById("dtDecNet").textContent = formatPaiseINR(detail.decision_forecast?.expected_net_recovery_paise || Math.floor(c.amount_paise * 0.76 - 2200));
-      document.getElementById("dtOutStatus").textContent = c.current_state;
+      
+      const outStatusEl = document.getElementById("dtOutStatus");
+      if (outStatusEl) {
+        outStatusEl.textContent = c.current_state;
+        outStatusEl.className = `drawer-metric-val ${c.current_state === 'RECOVERED' ? 'text-emerald' : (c.current_state === 'DECIDED' ? 'text-cyan' : 'text-amber')}`;
+      }
 
-      // Update AI Policy Rationale Box
+      // AI Policy Rationale
       if (detail.decision_forecast) {
         document.getElementById("dtDecAction").textContent = detail.decision_forecast.recommended_action.toUpperCase();
         document.getElementById("dtDecExplanation").textContent = detail.decision_forecast.explanation;
@@ -775,12 +799,12 @@
     let html = "";
     events.forEach((evt) => {
       html += `
-        <div style="background:rgba(14,25,36,0.7);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:0.6rem 0.8rem;">
+        <div style="background:rgba(14,25,36,0.7);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:0.55rem 0.75rem;">
           <div class="flex-between">
             <span class="mono font-bold text-xs text-bright">${escapeHTML(evt.title)}</span>
             <span class="mono text-dim text-xs">${formatTimestamp(evt.timestamp)}</span>
           </div>
-          <div class="text-xs text-muted" style="margin-top:0.25rem;">${escapeHTML(evt.description)}</div>
+          <div class="text-xs text-muted" style="margin-top:0.2rem;">${escapeHTML(evt.description)}</div>
         </div>
       `;
     });
@@ -825,12 +849,13 @@
 
       let rows = "";
       data.items.forEach((c) => {
+        const stateColorClass = c.current_state === 'RECOVERED' ? 'text-emerald' : (c.current_state === 'DECIDED' ? 'text-cyan' : 'text-amber');
         rows += `
           <tr>
             <td class="mono font-bold text-bright">${escapeHTML(c.case_id)}</td>
             <td class="mono text-dim">${escapeHTML(maskCustomerId(c.customer_id))}</td>
             <td class="mono font-bold text-bright">${formatPaiseINR(c.amount_paise)}</td>
-            <td><span class="badge badge-test-mode" style="padding:1px 6px;font-size:0.68rem;">${escapeHTML(c.current_state)}</span></td>
+            <td><span class="mono text-xs font-bold ${stateColorClass}">${escapeHTML(c.current_state)}</span></td>
             <td><span class="mono text-xs text-cyan font-bold">${escapeHTML(c.recommended_action)}</span></td>
             <td class="mono text-dim text-xs">${escapeHTML(c.failure_type || "temporary")}</td>
             <td class="mono text-center">${c.retry_count}</td>
@@ -877,10 +902,10 @@
       const widthPct = Math.max(10, Math.min(100, s.pct));
       const amountLabel = s.amount !== null ? ` • ${formatPaiseINR(s.amount)}` : "";
       html += `
-        <div style="display:grid;grid-template-columns:120px 1fr 180px;gap:1rem;align-items:center;margin-bottom:0.75rem;">
+        <div style="display:grid;grid-template-columns:110px 1fr 180px;gap:0.85rem;align-items:center;margin-bottom:0.65rem;">
           <div class="mono text-xs font-bold text-dim text-right">${s.name}</div>
-          <div style="background:rgba(148,163,184,0.08);border-radius:var(--radius-sm);height:28px;overflow:hidden;border:1px solid var(--border-subtle);">
-            <div style="height:100%;width:${widthPct}%;background:${s.color};display:flex;align-items:center;padding-left:0.75rem;color:#ffffff;font-family:var(--font-mono);font-size:0.725rem;font-weight:700;">
+          <div style="background:rgba(148,163,184,0.08);border-radius:var(--radius-sm);height:26px;overflow:hidden;border:1px solid var(--border-subtle);">
+            <div style="height:100%;width:${widthPct}%;background:${s.color};display:flex;align-items:center;padding-left:0.75rem;color:#ffffff;font-family:var(--font-mono);font-size:0.7rem;font-weight:700;">
               ${s.count} (${s.pct.toFixed(1)}%)
             </div>
           </div>
@@ -904,13 +929,13 @@
       }
 
       const maxGross = Math.max(...trends.map((t) => t.gross_recovered_paise), 1);
-      let chartHtml = `<div style="display:flex;gap:0.85rem;align-items:flex-end;height:160px;padding:1rem 0;overflow-x:auto;">`;
+      let chartHtml = `<div style="display:flex;gap:0.85rem;align-items:flex-end;height:150px;padding:0.75rem 0;overflow-x:auto;">`;
       trends.forEach((t) => {
         const heightPct = Math.max(8, Math.round((t.gross_recovered_paise / maxGross) * 100));
         chartHtml += `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;min-width:54px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;min-width:50px;">
             <span class="mono text-xs text-emerald font-bold">${formatPaiseINR(t.gross_recovered_paise)}</span>
-            <div style="width:32px;height:${heightPct}px;background:linear-gradient(180deg,#0284c7,#06b6d4);border-radius:var(--radius-sm);" title="${t.time_bucket}: ${formatPaiseINR(t.gross_recovered_paise)}"></div>
+            <div style="width:28px;height:${heightPct}px;background:linear-gradient(180deg,#0284c7,#06b6d4);border-radius:var(--radius-sm);" title="${t.time_bucket}: ${formatPaiseINR(t.gross_recovered_paise)}"></div>
             <span class="mono text-xs text-dim">${escapeHTML(t.time_bucket.slice(5))}</span>
           </div>
         `;
@@ -928,7 +953,7 @@
     try {
       const [overviewData, casesData] = await Promise.all([
         fetchAPI("/api/v1/dashboard/overview"),
-        fetchAPI("/api/v1/recovery/cases?limit=60"),
+        fetchAPI("/api/v1/recovery/cases?limit=50"),
       ]);
 
       state.overview = overviewData;
@@ -949,13 +974,12 @@
     }
   }
 
-  // Expose global inspector for inline click triggers
   window.inspectCase = inspectCase;
 
   function init() {
     initCanvas();
 
-    // Toolbar View Switchers
+    // 1. Toolbar View Switchers
     document.querySelectorAll(".tool-btn[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.getAttribute("data-view");
@@ -963,20 +987,16 @@
       });
     });
 
-    // Camera Zoom Controls
+    // 2. Camera Controls
     document.getElementById("btnZoomIn")?.addEventListener("click", () => {
-      state.camera.targetScale = Math.min(2.8, state.camera.targetScale * 1.25);
+      state.camera.targetScale = Math.min(2.5, state.camera.targetScale * 1.25);
     });
     document.getElementById("btnZoomOut")?.addEventListener("click", () => {
       state.camera.targetScale = Math.max(0.4, state.camera.targetScale * 0.8);
     });
-    document.getElementById("btnResetCamera")?.addEventListener("click", () => {
-      state.camera.targetX = 0;
-      state.camera.targetY = 0;
-      state.camera.targetScale = 1;
-    });
+    document.getElementById("btnResetCamera")?.addEventListener("click", autoFitCamera);
 
-    // Left Timeline Scrubber Rail Buttons
+    // 3. Left Timeline Rail Buttons
     document.querySelectorAll(".timeline-step-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".timeline-step-btn").forEach((b) => b.classList.remove("active"));
@@ -986,7 +1006,22 @@
       });
     });
 
-    // Dendrogram Branch Selector Cards
+    // 4. Bottom-Left Legend Filter Buttons
+    document.querySelectorAll(".legend-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const cluster = item.getAttribute("data-filter-cluster");
+        if (state.activeFilterCluster === cluster) {
+          state.activeFilterCluster = null;
+          item.style.opacity = "1";
+        } else {
+          state.activeFilterCluster = cluster;
+          document.querySelectorAll(".legend-item").forEach((li) => li.style.opacity = "0.5");
+          item.style.opacity = "1";
+        }
+      });
+    });
+
+    // 5. Dendrogram Branch Selector Cards
     document.querySelectorAll(".branch-card").forEach((card) => {
       card.addEventListener("click", () => {
         document.querySelectorAll(".branch-card").forEach((c) => c.classList.remove("active"));
@@ -998,12 +1033,12 @@
       });
     });
 
-    // Drawer Close
+    // 6. Drawer Close
     document.getElementById("modalCloseBtn")?.addEventListener("click", () => {
       document.getElementById("caseDetailModal")?.classList.remove("open");
     });
 
-    // AI Copilot Drawer Toggle
+    // 7. AI Copilot Drawer Toggle
     document.getElementById("btnToggleAIInsights")?.addEventListener("click", () => {
       document.getElementById("aiInsightsDrawer")?.classList.toggle("open");
     });
@@ -1011,12 +1046,26 @@
       document.getElementById("aiInsightsDrawer")?.classList.remove("open");
     });
 
-    // Manual Trigger Sync Button
+    // 8. AI Query Search Input
+    document.getElementById("aiQueryInput")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const query = e.target.value.trim().toLowerCase();
+        if (query.includes("subscription") || query.includes("retry")) {
+          state.queue.isSubscription = "true";
+          switchView("view-queue");
+        } else if (query) {
+          state.queue.search = query;
+          switchView("view-queue");
+        }
+      }
+    });
+
+    // 9. Manual Sync Trigger Button
     document.getElementById("btnTriggerSimulation")?.addEventListener("click", () => {
       loadAllData();
     });
 
-    // Queue Filters
+    // 10. Queue Filters & Pagination
     document.getElementById("applyFiltersBtn")?.addEventListener("click", () => {
       state.queue.search = document.getElementById("searchInput")?.value.trim() || "";
       state.queue.state = document.getElementById("filterState")?.value || "";
