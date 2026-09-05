@@ -12,6 +12,7 @@ from agent.tools.action_status import GetActionStatusTool
 from agent.tools.outcome import RecordRecoveryOutcomeTool
 from agent.tools.summary import GetRecoverySummaryTool
 from agent.tools.razorpay_sync import SyncRazorpayPaymentLinkTool
+from agent.tools.subscription_sync import SyncSubscriptionTool
 
 
 class ToolRegistry:
@@ -32,6 +33,7 @@ class ToolRegistry:
         self.register(RecordRecoveryOutcomeTool())
         self.register(GetRecoverySummaryTool())
         self.register(SyncRazorpayPaymentLinkTool())
+        self.register(SyncSubscriptionTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

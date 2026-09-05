@@ -27,6 +27,8 @@ from recovery.providers.razorpay.errors import (
 from recovery.providers.razorpay.schemas import (
     RazorpayPaymentLinkCreateRequest,
     RazorpayPaymentLinkResponse,
+    RazorpaySubscriptionResponse,
+    RazorpayInvoiceResponse,
 )
 
 logger = logging.getLogger("recoverai.razorpay.client")
@@ -254,3 +256,66 @@ class RazorpayClient:
         except Exception as err:
             logger.warning("Failed to look up payment link by reference_id '%s': %s", reference_id, redact_secrets(str(err)))
         return None
+
+    def get_subscription(self, subscription_id: str) -> RazorpaySubscriptionResponse:
+        """
+        Retrieves subscription details via GET /v1/subscriptions/{id}.
+        """
+        raw = self._request("GET", f"/subscriptions/{subscription_id}")
+        return RazorpaySubscriptionResponse(
+            id=raw.get("id", subscription_id),
+            plan_id=raw.get("plan_id"),
+            customer_id=raw.get("customer_id"),
+            status=raw.get("status", "active"),
+            current_count=raw.get("current_count", 1),
+            total_count=raw.get("total_count"),
+            paid_count=raw.get("paid_count", 0),
+            remaining_count=raw.get("remaining_count"),
+            auth_attempts=raw.get("auth_attempts", 0),
+            charge_at=raw.get("charge_at"),
+            short_url=raw.get("short_url"),
+            notes=raw.get("notes", {}),
+            raw_response=raw,
+        )
+
+    def get_subscription_invoices(self, subscription_id: str) -> List[RazorpayInvoiceResponse]:
+        """
+        Retrieves all invoices for a subscription via GET /v1/invoices?subscription_id={id}.
+        """
+        raw = self._request("GET", "/invoices", params={"subscription_id": subscription_id})
+        items = raw.get("items", []) or raw.get("invoices", [])
+        results = []
+        for inv in items:
+            results.append(
+                RazorpayInvoiceResponse(
+                    id=inv.get("id", ""),
+                    subscription_id=inv.get("subscription_id", subscription_id),
+                    customer_id=inv.get("customer_id"),
+                    amount=inv.get("amount", 0),
+                    amount_paid=inv.get("amount_paid", 0),
+                    amount_due=inv.get("amount_due", 0),
+                    currency=inv.get("currency", "INR"),
+                    status=inv.get("status", "issued"),
+                    payment_id=inv.get("payment_id"),
+                    raw_response=inv,
+                )
+            )
+        return results
+
+    def get_invoice(self, invoice_id: str) -> RazorpayInvoiceResponse:
+        """
+        Retrieves a single invoice via GET /v1/invoices/{id}.
+        """
+        raw = self._request("GET", f"/invoices/{invoice_id}")
+        return RazorpayInvoiceResponse(
+            id=raw.get("id", invoice_id),
+            subscription_id=raw.get("subscription_id"),
+            customer_id=raw.get("customer_id"),
+            amount=raw.get("amount", 0),
+            amount_paid=raw.get("amount_paid", 0),
+            amount_due=raw.get("amount_due", 0),
+            currency=raw.get("currency", "INR"),
+            status=raw.get("status", "issued"),
+            payment_id=raw.get("payment_id"),
+            raw_response=raw,
+        )

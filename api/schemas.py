@@ -195,6 +195,7 @@ class OutcomeEventRequest(BaseModel):
     outcome_status: OutcomeStatus = Field(description="Operational outcome status ('recovered' or 'not_recovered')")
     recovered_amount_paise: int = Field(ge=0, description="Amount recovered in integer paise (0 if not recovered)")
     provider_reference: Optional[str] = Field(default=None, description="External provider transaction reference")
+    resolution_source: Optional[str] = Field(default=None, description="Attribution: recoverai_intervention or provider_auto_retry")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary observational event metadata")
     event_timestamp: Optional[str] = Field(default=None, description="ISO 8601 timestamp when outcome occurred")
 
@@ -210,8 +211,37 @@ class OutcomeEventResponse(BaseModel):
     outcome_status: OutcomeStatus = Field(description="Operational outcome status ('recovered' or 'not_recovered')")
     recovered_amount_paise: int = Field(description="Recovered amount in integer paise")
     recovered_amount_inr: float = Field(description="Recovered amount in INR")
+    resolution_source: Optional[str] = Field(default=None, description="Attribution: recoverai_intervention or provider_auto_retry")
     event_timestamp: str = Field(description="ISO 8601 timestamp of outcome event")
     created_at: str = Field(description="ISO 8601 recording timestamp")
+
+
+class SubscriptionResponse(BaseModel):
+    """Subscription detail response model."""
+    model_config = ConfigDict(frozen=True)
+
+    subscription_id: str
+    customer_id: str
+    plan_id: Optional[str] = None
+    status: str
+    current_cycle: int
+    total_cycles: Optional[int] = None
+    amount_due_paise: int
+    amount_due_inr: float
+    currency: str = "INR"
+    charge_attempt_count: int = 0
+    next_charge_at: Optional[str] = None
+    last_case_id: Optional[str] = None
+    is_recoverable: bool = True
+    created_at: str
+    updated_at: str
+
+
+class SubscriptionSyncRequest(BaseModel):
+    """Request model for active subscription reconciliation."""
+    model_config = ConfigDict(extra="forbid")
+
+    subscription_id: str = Field(..., description="Target Razorpay subscription ID (e.g. sub_xxx)")
 
 
 class ActionRecoveryMetric(BaseModel):

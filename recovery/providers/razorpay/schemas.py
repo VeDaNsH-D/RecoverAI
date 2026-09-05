@@ -76,9 +76,81 @@ class RazorpayPaymentLinkEntity(BaseModel):
     user_id: Optional[str] = None
 
 
+class RazorpaySubscriptionEntity(BaseModel):
+    id: str
+    plan_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    status: str  # active, pending, halted, cancelled, completed, authenticated
+    current_start: Optional[int] = None
+    current_end: Optional[int] = None
+    ended_at: Optional[int] = None
+    quantity: int = 1
+    notes: Dict[str, Any] = Field(default_factory=dict)
+    charge_at: Optional[int] = None
+    start_at: Optional[int] = None
+    end_at: Optional[int] = None
+    auth_attempts: int = 0
+    total_count: Optional[int] = None
+    paid_count: int = 0
+    remaining_count: Optional[int] = None
+    short_url: Optional[str] = None
+    has_scheduled_changes: bool = False
+    change_scheduled_at: Optional[int] = None
+    source: Optional[str] = None
+    created_at: Optional[int] = None
+
+
+class RazorpayInvoiceEntity(BaseModel):
+    id: str
+    subscription_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    order_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    amount: int
+    amount_paid: int = 0
+    amount_due: int = 0
+    currency: str = "INR"
+    status: str  # issued, paid, cancelled, expired, partially_paid
+    billing_start: Optional[int] = None
+    billing_end: Optional[int] = None
+    notes: Dict[str, Any] = Field(default_factory=dict)
+    created_at: Optional[int] = None
+
+
+class RazorpaySubscriptionResponse(BaseModel):
+    id: str
+    plan_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    status: str
+    current_count: int = 1
+    total_count: Optional[int] = None
+    paid_count: int = 0
+    remaining_count: Optional[int] = None
+    auth_attempts: int = 0
+    charge_at: Optional[int] = None
+    short_url: Optional[str] = None
+    notes: Dict[str, Any] = Field(default_factory=dict)
+    raw_response: Dict[str, Any] = Field(default_factory=dict)
+
+
+class RazorpayInvoiceResponse(BaseModel):
+    id: str
+    subscription_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    amount: int
+    amount_paid: int = 0
+    amount_due: int = 0
+    currency: str = "INR"
+    status: str
+    payment_id: Optional[str] = None
+    raw_response: Dict[str, Any] = Field(default_factory=dict)
+
+
 class RazorpayWebhookPayloadContainer(BaseModel):
     payment: Optional[Dict[str, Any]] = None
     payment_link: Optional[Dict[str, Any]] = None
+    subscription: Optional[Dict[str, Any]] = None
+    invoice: Optional[Dict[str, Any]] = None
 
 
 class RazorpayWebhookEvent(BaseModel):
@@ -87,7 +159,7 @@ class RazorpayWebhookEvent(BaseModel):
     """
     entity: str = "event"
     account_id: Optional[str] = None
-    event: str  # e.g. payment_link.paid, payment_link.expired, payment.captured
+    event: str  # e.g. payment_link.paid, subscription.pending, subscription.charged, etc.
     contains: List[str] = Field(default_factory=list)
     payload: Dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[int] = None

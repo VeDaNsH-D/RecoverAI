@@ -219,7 +219,8 @@ recoverai/
 │   ├── PRODUCTION_READINESS.md # Production readiness, error envelopes, and correlation architecture
 │   ├── RAZORPAY_INTEGRATION.md # Razorpay TEST MODE integration, webhooks & reconciliation
 │   ├── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
-│   └── SCALE_EVALUATION.md     # Milestone 7 scale evaluation, vectorization & bootstrap framework
+│   ├── SCALE_EVALUATION.md     # Milestone 7 scale evaluation, vectorization & bootstrap framework
+│   └── SUBSCRIPTION_RECOVERY.md# Milestone 8 subscription recovery, billing cycles & attribution
 ├── ml/
 │   ├── features.py             # Leakage-safe observable feature extraction (24D preallocated numpy)
 │   ├── dataset.py              # Supervised potential-outcome dataset bundles
@@ -245,7 +246,8 @@ recoverai/
 │   ├── repository.py           # SQLite repository with atomic transactions & busy timeout
 │   ├── executor.py             # Provider dispatcher & registry
 │   ├── actions/                # Provider-agnostic action mocks (retry, link, remind, etc.)
-│   └── providers/              # External payment provider adapters (Razorpay TEST MODE)
+│   ├── providers/              # External payment provider adapters (Razorpay TEST MODE)
+│   └── subscriptions/          # Subscription domain models, cycle identity, stopping rules
 ├── reports/
 │   ├── final_test_evaluation.json  # Reproducible test benchmark results (Mode A)
 │   ├── final_test_evaluation.md    # Markdown benchmark report (Mode A)
@@ -265,7 +267,7 @@ recoverai/
 │   ├── smoke_test_llm_agent.py # Live HTTP LLM tool-calling agent smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 128 unit, integration, security, equivalence, bootstrap, and scale tests
+└── tests/                      # 150+ unit, integration, security, equivalence, bootstrap, scale & subscription tests
 ```
 
 ---

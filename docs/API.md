@@ -542,6 +542,42 @@ Detailed documentation: [`docs/RAZORPAY_INTEGRATION.md`](RAZORPAY_INTEGRATION.md
 
 ---
 
+### 2.9 Subscription Recovery & Management
+- **Endpoints**:
+  - `GET /api/v1/recovery/subscriptions/{subscription_id}`: Retrieves subscription record, current billing cycle index, status, and associated recovery case.
+  - `GET /api/v1/recovery/subscriptions?status={status}&limit={limit}`: Lists subscriptions with optional status filter (`active`, `pending`, `halted`, `cancelled`, `completed`).
+  - `POST /api/v1/recovery/subscriptions/sync`: Actively synchronizes subscription status against Razorpay TEST API and reconciles associated open cases.
+- **Request Body (`/sync`)**:
+  ```json
+  {
+    "subscription_id": "sub_test_001"
+  }
+  ```
+- **Response `200 OK`**:
+  ```json
+  {
+    "subscription_id": "sub_test_001",
+    "customer_id": "cust_001",
+    "plan_id": "plan_monthly_pro",
+    "status": "active",
+    "current_cycle": 2,
+    "total_cycles": 12,
+    "amount_due_paise": 299900,
+    "amount_due_inr": 2999.0,
+    "currency": "INR",
+    "charge_attempt_count": 0,
+    "next_charge_at": null,
+    "last_case_id": "sub_sub_test_001_inv_001",
+    "is_recoverable": true,
+    "created_at": "2026-09-05T00:00:00Z",
+    "updated_at": "2026-09-05T00:00:00Z"
+  }
+  ```
+
+Detailed documentation: [`docs/SUBSCRIPTION_RECOVERY.md`](SUBSCRIPTION_RECOVERY.md)
+
+---
+
 ## 3. Local Development Commands
 
 ### Start API Server:

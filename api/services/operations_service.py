@@ -99,6 +99,9 @@ class OperationsService:
         is_subscription: bool = False,
         failure_type: str = "temporary_failure",
         retry_count: int = 0,
+        subscription_id: Optional[str] = None,
+        billing_cycle_id: Optional[str] = None,
+        recovery_source: Optional[str] = "one_off",
         created_at: Optional[str] = None,
     ) -> DecisionRecord:
         """
@@ -127,6 +130,9 @@ class OperationsService:
             is_subscription=is_subscription,
             failure_type=failure_type,
             retry_count=retry_count,
+            subscription_id=subscription_id,
+            billing_cycle_id=billing_cycle_id,
+            recovery_source=recovery_source,
         )
         return record
 
@@ -311,6 +317,7 @@ class OperationsService:
             outcome_status=request.outcome_status,
             recovered_amount_paise=request.recovered_amount_paise,
             provider_reference=request.provider_reference or action.provider_reference,
+            resolution_source=request.resolution_source,
             metadata=request.metadata,
             event_timestamp=evt_ts,
             created_at=now_ts,
@@ -326,6 +333,7 @@ class OperationsService:
             outcome_status=request.outcome_status,
             recovered_amount_paise=request.recovered_amount_paise,
             recovered_amount_inr=request.recovered_amount_paise / 100.0,
+            resolution_source=request.resolution_source,
             event_timestamp=evt_ts,
             created_at=now_ts,
         )

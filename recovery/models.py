@@ -82,6 +82,7 @@ class OutcomeRecord(BaseModel):
     outcome_status: OutcomeStatus
     recovered_amount_paise: int
     provider_reference: Optional[str] = None
+    resolution_source: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     event_timestamp: str
     created_at: str
@@ -101,6 +102,10 @@ class RecoveryCaseRecord(BaseModel):
     is_subscription: bool = False
     failure_type: Optional[str] = None
     retry_count: int = 0
+    subscription_id: Optional[str] = None
+    billing_cycle_id: Optional[str] = None
+    recovery_source: Optional[str] = "one_off"
+    resolution_source: Optional[str] = None
     last_action_id: Optional[str] = None
     last_action_status: Optional[ActionExecutionStatus] = None
     outcome_status: Optional[OutcomeStatus] = None

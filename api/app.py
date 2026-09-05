@@ -27,6 +27,7 @@ from api.routes import (
     agent,
     webhooks,
     provider_sync,
+    subscriptions,
 )
 from api.services.recovery_service import recovery_service
 from api.services.operations_service import (
@@ -331,6 +332,7 @@ def create_app() -> FastAPI:
     app.include_router(agent.router, prefix="/api/v1")
     app.include_router(webhooks.router, prefix="/api/v1")
     app.include_router(provider_sync.router, prefix="/api/v1")
+    app.include_router(subscriptions.router, prefix="/api/v1")
 
     # Top-level health and ready convenience aliases
     app.include_router(health.router, prefix="")

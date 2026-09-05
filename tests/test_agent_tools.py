@@ -48,6 +48,7 @@ def test_tool_registry_initialization():
         "record_recovery_outcome",
         "get_recovery_summary",
         "sync_razorpay_payment_link",
+        "sync_subscription",
     ]
     assert sorted(tool_names) == sorted(expected)
 
