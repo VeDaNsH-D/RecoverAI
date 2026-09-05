@@ -336,3 +336,124 @@ class ErrorResponse(BaseModel):
     detail: str = Field(description="Human-readable explanation of error")
     timestamp: str = Field(description="ISO 8601 error timestamp")
     request_id: Optional[str] = Field(default=None, description="Request correlation ID")
+
+
+# =============================================================================
+# Merchant Recovery Command Center Schemas (Milestone 9)
+# =============================================================================
+
+class RecoveryCaseSummaryItem(BaseModel):
+    """
+    Lightweight summary representation of a recovery case for list tables.
+    GUARANTEE: Strict integer paise only. No amount_inr floats.
+    """
+    model_config = ConfigDict(frozen=True)
+
+    case_id: str = Field(description="Unique case identifier")
+    customer_id: str = Field(description="Synthetic customer identifier (masked in UI)")
+    amount_paise: int = Field(ge=0, description="Gross amount at risk in integer paise")
+    current_state: str = Field(description="Current operational lifecycle state")
+    decision_id: Optional[str] = Field(default=None, description="Associated decision ID")
+    recommended_action: str = Field(description="Selected bounded recovery action")
+    payment_method: Optional[str] = Field(default=None, description="Payment method used")
+    is_subscription: bool = Field(default=False, description="Whether recurring subscription")
+    failure_type: Optional[str] = Field(default=None, description="Diagnosed failure reason")
+    retry_count: int = Field(default=0, ge=0, description="Prior retry count")
+    subscription_id: Optional[str] = Field(default=None, description="Linked subscription ID if applicable")
+    billing_cycle_id: Optional[str] = Field(default=None, description="Linked billing cycle ID if applicable")
+    recovery_source: Optional[str] = Field(default="one_off", description="Recovery source origin")
+    resolution_source: Optional[str] = Field(default=None, description="Attribution: recoverai_intervention or provider_auto_retry")
+    outcome_status: Optional[str] = Field(default=None, description="Settled outcome status ('recovered' or 'not_recovered')")
+    recovered_amount_paise: Optional[int] = Field(default=None, ge=0, description="Authoritative recovered paise")
+    created_at: str = Field(description="ISO 8601 creation timestamp")
+    updated_at: str = Field(description="ISO 8601 last updated timestamp")
+
+
+class PaginatedCasesResponse(BaseModel):
+    """Paginated list of recovery cases."""
+    model_config = ConfigDict(frozen=True)
+
+    items: List[RecoveryCaseSummaryItem] = Field(description="List of recovery cases")
+    total_count: int = Field(ge=0, description="Total matching cases count")
+    limit: int = Field(ge=1, le=100, description="Page limit")
+    offset: int = Field(ge=0, description="Page offset")
+
+
+class CaseDetailDecisionForecast(BaseModel):
+    """Forecast and model prediction estimates from the decision ledger."""
+    model_config = ConfigDict(frozen=True)
+
+    decision_id: str
+    recommended_action: str
+    recovery_probability: float
+    expected_gross_recovery_paise: int
+    action_cost_paise: int
+    expected_net_recovery_paise: int
+    decision_margin_paise: int
+    explanation: str
+    model_family: str
+    created_at: str
+
+
+class CaseDetailActionExecution(BaseModel):
+    """Executed operational action dispatch record."""
+    model_config = ConfigDict(frozen=True)
+
+    action_id: str
+    action: str
+    status: str
+    cost_paise: int
+    provider_reference: str
+    error_message: Optional[str] = None
+    executed_at: str
+    idempotency_key: str
+
+
+class CaseDetailOutcomeSettlement(BaseModel):
+    """Authoritative settled outcome record."""
+    model_config = ConfigDict(frozen=True)
+
+    event_id: str
+    outcome_status: str
+    recovered_amount_paise: int
+    resolution_source: Optional[str] = None
+    provider_reference: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    event_timestamp: str
+    created_at: str
+
+
+class CaseDetailResponse(BaseModel):
+    """
+    Comprehensive recovery case detail view for merchant inspection.
+    Explicitly separates Model Forecast from Authoritative Settled Outcome.
+    """
+    model_config = ConfigDict(frozen=True)
+
+    case: RecoveryCaseSummaryItem = Field(description="Authoritative case record")
+    decision_forecast: Optional[CaseDetailDecisionForecast] = Field(default=None, description="Decision model forecast (estimates)")
+    action_execution: Optional[CaseDetailActionExecution] = Field(default=None, description="Operational action dispatch")
+    outcome_settlement: Optional[CaseDetailOutcomeSettlement] = Field(default=None, description="Authoritative settled outcome")
+    subscription: Optional[SubscriptionResponse] = Field(default=None, description="Linked subscription if recurring")
+
+
+class TimelineEventItem(BaseModel):
+    """Single auditable event in the recovery case timeline."""
+    model_config = ConfigDict(frozen=True)
+
+    event_id: str = Field(description="Unique event identifier")
+    stage: str = Field(description="Event stage category (case_created, decision_computed, action_dispatched, webhook_received, outcome_settled)")
+    timestamp: str = Field(description="ISO 8601 event timestamp")
+    title: str = Field(description="Event summary title")
+    description: str = Field(description="Detailed event description")
+    status: str = Field(description="Event status (COMPLETED, FAILED, etc.)")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Event context metadata")
+
+
+class CaseTimelineResponse(BaseModel):
+    """Chronological audit timeline for a recovery case."""
+    model_config = ConfigDict(frozen=True)
+
+    case_id: str = Field(description="Associated recovery case ID")
+    events: List[TimelineEventItem] = Field(description="Chronological list of audit events")
+

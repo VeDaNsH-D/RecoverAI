@@ -12,6 +12,8 @@ from recovery.repository import RecoveryRepository
 from analytics.models import (
     AnalyticsFilter,
     OverviewAnalytics,
+    FunnelAnalytics,
+    AttributionAnalytics,
     ActionAnalyticsItem,
     FailureTypeAnalyticsItem,
     RetryCountAnalyticsItem,
@@ -156,13 +158,17 @@ class AnalyticsRepository:
         execution_failures = row["execution_failures"] or 0
         total_action_cost_paise = row["total_action_cost_paise"] or 0
 
-        # 3. Outcomes aggregates
+        # 3. Outcomes aggregates with authoritative attribution
         cur = conn.execute(
             f"""
             SELECT
                 SUM(CASE WHEN o.outcome_status = 'recovered' THEN 1 ELSE 0 END) as recovered_cases,
                 SUM(CASE WHEN o.outcome_status = 'not_recovered' THEN 1 ELSE 0 END) as not_recovered_cases,
-                COALESCE(SUM(CASE WHEN o.outcome_status = 'recovered' THEN o.recovered_amount_paise ELSE 0 END), 0) as gross_recovered_paise
+                COALESCE(SUM(CASE WHEN o.outcome_status = 'recovered' THEN o.recovered_amount_paise ELSE 0 END), 0) as gross_recovered_paise,
+                COALESCE(SUM(CASE WHEN o.outcome_status = 'recovered' AND (o.resolution_source = 'recoverai_intervention' OR o.resolution_source IS NULL) THEN o.recovered_amount_paise ELSE 0 END), 0) as recoverai_gross_paise,
+                COALESCE(SUM(CASE WHEN o.outcome_status = 'recovered' AND o.resolution_source = 'provider_auto_retry' THEN o.recovered_amount_paise ELSE 0 END), 0) as provider_gross_paise,
+                SUM(CASE WHEN o.outcome_status = 'recovered' AND (o.resolution_source = 'recoverai_intervention' OR o.resolution_source IS NULL) THEN 1 ELSE 0 END) as recoverai_rec_count,
+                SUM(CASE WHEN o.outcome_status = 'recovered' AND o.resolution_source = 'provider_auto_retry' THEN 1 ELSE 0 END) as provider_rec_count
             FROM cases c
             JOIN outcomes o ON c.case_id = o.case_id
             {where_sql};
@@ -173,11 +179,32 @@ class AnalyticsRepository:
         recovered_cases = row["recovered_cases"] or 0
         not_recovered_cases = row["not_recovered_cases"] or 0
         gross_recovered_paise = row["gross_recovered_paise"] or 0
+        recoverai_gross_recovered_paise = row["recoverai_gross_paise"] or 0
+        provider_gross_recovered_paise = row["provider_gross_paise"] or 0
+        recoverai_rec_count = row["recoverai_rec_count"] or 0
+        provider_rec_count = row["provider_rec_count"] or 0
 
+        recoverai_net_recovered_paise = calculate_net_paise(recoverai_gross_recovered_paise, total_action_cost_paise)
         net_recovered_paise = calculate_net_paise(gross_recovered_paise, total_action_cost_paise)
         recovery_rate = calculate_recovery_rate(recovered_cases, not_recovered_cases)
         execution_success_rate = calculate_rate(actions_executed, actions_attempted)
         execution_failure_rate = calculate_rate(execution_failures, actions_attempted)
+
+        unresolved_cases = max(0, total_cases - recovered_cases)
+
+        funnel = FunnelAnalytics(
+            cases_at_risk=total_cases,
+            decisions_evaluated=decisions_made,
+            interventions_dispatched=actions_attempted,
+            successful_executions=actions_executed,
+            recovered_outcomes=recovered_cases,
+        )
+
+        attribution = AttributionAnalytics(
+            recoverai_intervention_recovered_cases=recoverai_rec_count,
+            provider_auto_retry_recovered_cases=provider_rec_count,
+            unresolved_cases=unresolved_cases,
+        )
 
         now_ts = datetime.now(timezone.utc).isoformat()
 
@@ -201,6 +228,14 @@ class AnalyticsRepository:
             total_action_cost_inr=paise_to_inr(total_action_cost_paise),
             net_recovered_paise=net_recovered_paise,
             net_recovered_inr=paise_to_inr(net_recovered_paise),
+            recoverai_gross_recovered_paise=recoverai_gross_recovered_paise,
+            recoverai_gross_recovered_inr=paise_to_inr(recoverai_gross_recovered_paise),
+            provider_gross_recovered_paise=provider_gross_recovered_paise,
+            provider_gross_recovered_inr=paise_to_inr(provider_gross_recovered_paise),
+            recoverai_net_recovered_paise=recoverai_net_recovered_paise,
+            recoverai_net_recovered_inr=paise_to_inr(recoverai_net_recovered_paise),
+            funnel=funnel,
+            attribution=attribution,
             timestamp=now_ts,
         )
 

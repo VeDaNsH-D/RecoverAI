@@ -11,7 +11,8 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.config import settings
 from api.middleware.correlation import RequestCorrelationMiddleware
@@ -28,6 +29,7 @@ from api.routes import (
     webhooks,
     provider_sync,
     subscriptions,
+    dashboard,
 )
 from api.services.recovery_service import recovery_service
 from api.services.operations_service import (
@@ -333,10 +335,21 @@ def create_app() -> FastAPI:
     app.include_router(webhooks.router, prefix="/api/v1")
     app.include_router(provider_sync.router, prefix="/api/v1")
     app.include_router(subscriptions.router, prefix="/api/v1")
+    app.include_router(dashboard.router, prefix="/api/v1")
 
     # Top-level health and ready convenience aliases
     app.include_router(health.router, prefix="")
     app.include_router(observability.router, prefix="")
+
+    # Root redirect to Command Center dashboard
+    @app.get("/", include_in_schema=False)
+    async def root_redirect():
+        return RedirectResponse(url="/dashboard", status_code=307)
+
+    # Static assets for Merchant Recovery Command Center UI
+    static_dir = Path("static")
+    static_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/dashboard", StaticFiles(directory=str(static_dir), html=True), name="dashboard_static")
 
     return app
 

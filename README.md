@@ -220,7 +220,12 @@ recoverai/
 │   ├── RAZORPAY_INTEGRATION.md # Razorpay TEST MODE integration, webhooks & reconciliation
 │   ├── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
 │   ├── SCALE_EVALUATION.md     # Milestone 7 scale evaluation, vectorization & bootstrap framework
-│   └── SUBSCRIPTION_RECOVERY.md# Milestone 8 subscription recovery, billing cycles & attribution
+│   ├── SUBSCRIPTION_RECOVERY.md# Milestone 8 subscription recovery, billing cycles & attribution
+│   └── DASHBOARD.md            # Milestone 9 Merchant Recovery Command Center guide
+├── static/                     # Merchant Recovery Command Center UI (SPA: HTML5, CSS, JS)
+│   ├── index.html              # Command Center single-page dashboard
+│   ├── dashboard.css           # Modern, zero-dependency slate/dark stylesheet
+│   └── dashboard.js            # Pure ES6 client with SVG funnel/donut visualizations
 ├── ml/
 │   ├── features.py             # Leakage-safe observable feature extraction (24D preallocated numpy)
 │   ├── dataset.py              # Supervised potential-outcome dataset bundles

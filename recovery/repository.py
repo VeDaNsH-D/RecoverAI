@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import sqlite3
 import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
 from simulator.config import RecoveryAction
@@ -1173,16 +1173,267 @@ class RecoveryRepository:
         )
         return [dict(row) for row in cur.fetchall()]
 
-    def update_case_resolution_source(self, case_id: str, resolution_source: str) -> None:
-        """Updates resolution source on a case record."""
+    def list_cases(
+        self,
+        limit: int = 20,
+        offset: int = 0,
+        state: Optional[str] = None,
+        action: Optional[str] = None,
+        failure_type: Optional[str] = None,
+        is_subscription: Optional[bool] = None,
+        search: Optional[str] = None,
+    ) -> Tuple[List[RecoveryCaseRecord], int]:
+        """
+        Retrieves a paginated list of recovery cases with optional filtering and search.
+        Bounded pagination: limit is clamped to [1, 100], offset >= 0.
+        """
         conn = self._get_connection()
-        now_ts = datetime.now(timezone.utc).isoformat()
-        with conn:
-            conn.execute(
-                """
-                UPDATE cases
-                SET resolution_source = ?, updated_at = ?
-                WHERE case_id = ?;
-                """,
-                (resolution_source, now_ts, case_id),
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+
+        clauses = []
+        params: List[Any] = []
+
+        if state:
+            clauses.append("c.current_state = ?")
+            params.append(state.upper() if hasattr(state, "upper") else str(state))
+        if action:
+            act_val = action.value if hasattr(action, "value") else str(action)
+            clauses.append("c.recommended_action = ?")
+            params.append(act_val)
+        if failure_type:
+            ft_val = failure_type.value if hasattr(failure_type, "value") else str(failure_type)
+            clauses.append("c.failure_type = ?")
+            params.append(ft_val)
+        if is_subscription is not None:
+            clauses.append("c.is_subscription = ?")
+            params.append(1 if is_subscription else 0)
+        if search:
+            clauses.append("(c.case_id LIKE ? OR c.customer_id LIKE ?)")
+            search_param = f"%{search}%"
+            params.extend([search_param, search_param])
+
+        where_sql = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+
+        # Total count query
+        count_cur = conn.execute(f"SELECT COUNT(*) as cnt FROM cases c {where_sql};", tuple(params))
+        total_count = count_cur.fetchone()["cnt"]
+
+        # Paginated items query
+        query_params = list(params) + [limit, offset]
+        cur = conn.execute(
+            f"""
+            SELECT * FROM cases c
+            {where_sql}
+            ORDER BY c.created_at DESC
+            LIMIT ? OFFSET ?;
+            """,
+            tuple(query_params),
+        )
+        rows = cur.fetchall()
+        items = []
+        for row in rows:
+            items.append(
+                RecoveryCaseRecord(
+                    case_id=row["case_id"],
+                    customer_id=row["customer_id"],
+                    amount_paise=row["amount_paise"],
+                    current_state=CaseState(row["current_state"]),
+                    decision_id=row["decision_id"],
+                    recommended_action=RecoveryAction(row["recommended_action"]),
+                    payment_method=row["payment_method"] if "payment_method" in row.keys() else None,
+                    is_subscription=bool(row["is_subscription"]) if "is_subscription" in row.keys() else False,
+                    failure_type=row["failure_type"] if "failure_type" in row.keys() else None,
+                    retry_count=row["retry_count"] if "retry_count" in row.keys() else 0,
+                    subscription_id=row["subscription_id"] if "subscription_id" in row.keys() else None,
+                    billing_cycle_id=row["billing_cycle_id"] if "billing_cycle_id" in row.keys() else None,
+                    recovery_source=row["recovery_source"] if "recovery_source" in row.keys() else "one_off",
+                    resolution_source=row["resolution_source"] if "resolution_source" in row.keys() else None,
+                    last_action_id=row["last_action_id"],
+                    last_action_status=ActionExecutionStatus(row["last_action_status"]) if row["last_action_status"] else None,
+                    outcome_status=OutcomeStatus(row["outcome_status"]) if row["outcome_status"] else None,
+                    recovered_amount_paise=row["recovered_amount_paise"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                )
             )
+        return items, total_count
+
+    def get_case_detail(self, case_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves complete domain and operational detail for a case:
+        case record, decision record, action record, outcome record, and subscription record (if linked).
+        """
+        case = self.get_case(case_id)
+        if not case:
+            return None
+
+        decision = self.get_decision(case.decision_id) if case.decision_id else None
+        action = None
+        if case.last_action_id:
+            action = self.get_action(case.last_action_id)
+        elif decision:
+            action = self.get_action_by_decision(decision.decision_id)
+
+        outcome = None
+        if action:
+            outcome = self.get_outcome_by_action_id(action.action_id)
+        if not outcome:
+            # Check outcomes table directly by case_id
+            conn = self._get_connection()
+            cur = conn.execute("SELECT action_id FROM outcomes WHERE case_id = ? LIMIT 1;", (case_id,))
+            row = cur.fetchone()
+            if row:
+                outcome = self.get_outcome_by_action_id(row["action_id"])
+
+        subscription = None
+        if case.subscription_id:
+            subscription = self.get_subscription(case.subscription_id)
+
+        return {
+            "case": case,
+            "decision": decision,
+            "action": action,
+            "outcome": outcome,
+            "subscription": subscription,
+        }
+
+    def get_case_timeline(self, case_id: str) -> List[Dict[str, Any]]:
+        """
+        Reconstructs the chronological audit timeline for a recovery case.
+        GUARANTEE: Every timeline event corresponds strictly to an existing persisted record.
+        Never synthesizes unpersisted events.
+        """
+        events: List[Dict[str, Any]] = []
+        case = self.get_case(case_id)
+        if not case:
+            return events
+
+        # 1. Case Ingestion / Creation
+        events.append({
+            "event_id": f"evt_case_{case.case_id}",
+            "stage": "case_created",
+            "timestamp": case.created_at,
+            "title": "Payment Failure Ingested",
+            "description": f"Payment failure observed ({case.failure_type or 'temporary_failure'}) for {case.amount_paise} paise.",
+            "status": "COMPLETED",
+            "metadata": {
+                "amount_paise": case.amount_paise,
+                "payment_method": case.payment_method,
+                "failure_type": case.failure_type,
+                "is_subscription": case.is_subscription,
+                "retry_count": case.retry_count,
+            },
+        })
+
+        # 2. Decision Engine Evaluation
+        if case.decision_id:
+            decision = self.get_decision(case.decision_id)
+            if decision:
+                events.append({
+                    "event_id": f"evt_dec_{decision.decision_id}",
+                    "stage": "decision_computed",
+                    "timestamp": decision.created_at,
+                    "title": f"Decision Generated: {decision.recommended_action.value.upper()}",
+                    "description": decision.explanation,
+                    "status": "COMPLETED",
+                    "metadata": {
+                        "decision_id": decision.decision_id,
+                        "recommended_action": decision.recommended_action.value,
+                        "recovery_probability": decision.recommended_action_recovery_probability,
+                        "expected_gross_recovery_paise": decision.expected_gross_recovery_paise,
+                        "action_cost_paise": decision.action_cost_paise,
+                        "expected_net_recovery_paise": decision.expected_net_recovery_paise,
+                        "decision_margin_paise": decision.decision_margin_paise,
+                        "model_family": decision.model_family,
+                    },
+                })
+
+        # 3. Action Dispatches
+        conn = self._get_connection()
+        cur_actions = conn.execute(
+            "SELECT * FROM actions WHERE case_id = ? ORDER BY executed_at ASC;",
+            (case_id,),
+        )
+        actions_rows = cur_actions.fetchall()
+        provider_refs = set()
+        for act_row in actions_rows:
+            provider_ref = act_row["provider_reference"]
+            if provider_ref:
+                provider_refs.add(provider_ref)
+            events.append({
+                "event_id": f"evt_act_{act_row['action_id']}",
+                "stage": "action_dispatched",
+                "timestamp": act_row["executed_at"],
+                "title": f"Action Executed: {act_row['action'].upper()}",
+                "description": f"Status: {act_row['status']}. Provider ref: {provider_ref or 'none'}",
+                "status": act_row["status"],
+                "metadata": {
+                    "action_id": act_row["action_id"],
+                    "action": act_row["action"],
+                    "cost_paise": act_row["cost_paise"],
+                    "provider_reference": provider_ref,
+                    "error_message": act_row["error_message"],
+                },
+            })
+
+        # 4. Webhook Events (Genuinely persisted webhook records only)
+        where_webhook = ["case_id = ?"]
+        webhook_params: List[Any] = [case_id]
+        if provider_refs:
+            placeholders = ", ".join(["?"] * len(provider_refs))
+            where_webhook.append(f"provider_reference IN ({placeholders})")
+            webhook_params.extend(list(provider_refs))
+
+        cur_webhooks = conn.execute(
+            f"SELECT * FROM webhook_events WHERE {' OR '.join(where_webhook)} ORDER BY processed_at ASC;",
+            tuple(webhook_params),
+        )
+        seen_webhook_ids = set()
+        for wh in cur_webhooks.fetchall():
+            if wh["event_id"] in seen_webhook_ids:
+                continue
+            seen_webhook_ids.add(wh["event_id"])
+            events.append({
+                "event_id": wh["event_id"],
+                "stage": "webhook_received",
+                "timestamp": wh["processed_at"],
+                "title": f"Webhook Received: {wh['event_type']}",
+                "description": f"Processing status: {wh['processing_status']}",
+                "status": "COMPLETED" if "error" not in wh["processing_status"] else "FAILED",
+                "metadata": {
+                    "event_type": wh["event_type"],
+                    "provider_reference": wh["provider_reference"],
+                    "processing_status": wh["processing_status"],
+                },
+            })
+
+        # 5. Outcome Settlements
+        cur_outcomes = conn.execute(
+            "SELECT * FROM outcomes WHERE case_id = ? ORDER BY event_timestamp ASC;",
+            (case_id,),
+        )
+        for out_row in cur_outcomes.fetchall():
+            res_source = out_row["resolution_source"] or "recoverai_intervention"
+            events.append({
+                "event_id": f"evt_out_{out_row['event_id']}",
+                "stage": "outcome_settled",
+                "timestamp": out_row["event_timestamp"] or out_row["created_at"],
+                "title": f"Outcome Settled: {out_row['outcome_status'].upper()}",
+                "description": (
+                    f"Recovered {out_row['recovered_amount_paise']} paise via {res_source}."
+                    if out_row["outcome_status"] == "recovered"
+                    else "Case marked not recovered."
+                ),
+                "status": "COMPLETED" if out_row["outcome_status"] == "recovered" else "NOT_RECOVERED",
+                "metadata": {
+                    "outcome_status": out_row["outcome_status"],
+                    "recovered_amount_paise": out_row["recovered_amount_paise"],
+                    "resolution_source": res_source,
+                    "provider_reference": out_row["provider_reference"],
+                },
+            })
+
+        # Deterministic chronological ordering
+        events.sort(key=lambda e: e["timestamp"])
+        return events

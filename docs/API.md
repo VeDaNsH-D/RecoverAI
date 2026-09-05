@@ -578,6 +578,20 @@ Detailed documentation: [`docs/SUBSCRIPTION_RECOVERY.md`](SUBSCRIPTION_RECOVERY.
 
 ---
 
+### 2.12 Merchant Recovery Command Center (Milestone 9)
+
+- **Endpoints**:
+  - `GET /api/v1/dashboard/overview`: Returns topline financial KPIs, 5-stage conversion funnel, and authoritative settlement attribution.
+  - `GET /api/v1/recovery/cases`: Returns paginated, filterable case queue (`limit <= 100`, strict integer paise).
+  - `GET /api/v1/recovery/cases/{case_id}`: Returns complete case detail separating Model Forecast from Settled Outcome.
+  - `GET /api/v1/recovery/cases/{case_id}/timeline`: Returns strict chronological audit timeline of persisted events.
+  - `GET /dashboard`: Serves the static single-page application.
+  - `GET /`: 307 Redirect to `/dashboard`.
+
+Detailed documentation: [`docs/DASHBOARD.md`](DASHBOARD.md)
+
+---
+
 ## 3. Local Development Commands
 
 ### Start API Server:

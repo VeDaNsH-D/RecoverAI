@@ -26,6 +26,26 @@ class AnalyticsFilter(BaseModel):
     retry_count: Optional[int] = Field(default=None, ge=0, description="Filter by retry count")
 
 
+class FunnelAnalytics(BaseModel):
+    """5-stage conversion funnel counters."""
+    model_config = ConfigDict(frozen=True)
+
+    cases_at_risk: int = 0
+    decisions_evaluated: int = 0
+    interventions_dispatched: int = 0
+    successful_executions: int = 0
+    recovered_outcomes: int = 0
+
+
+class AttributionAnalytics(BaseModel):
+    """Breakdown of recovered cases and gross amounts by authoritative attribution."""
+    model_config = ConfigDict(frozen=True)
+
+    recoverai_intervention_recovered_cases: int = 0
+    provider_auto_retry_recovered_cases: int = 0
+    unresolved_cases: int = 0
+
+
 class OverviewAnalytics(BaseModel):
     """
     High-level operational and financial summary of merchant recovery performance.
@@ -53,6 +73,17 @@ class OverviewAnalytics(BaseModel):
     total_action_cost_inr: float
     net_recovered_paise: int
     net_recovered_inr: float
+
+    # Authoritative attribution separation
+    recoverai_gross_recovered_paise: int = 0
+    recoverai_gross_recovered_inr: float = 0.0
+    provider_gross_recovered_paise: int = 0
+    provider_gross_recovered_inr: float = 0.0
+    recoverai_net_recovered_paise: int = 0
+    recoverai_net_recovered_inr: float = 0.0
+
+    funnel: Optional[FunnelAnalytics] = None
+    attribution: Optional[AttributionAnalytics] = None
 
     timestamp: str
 
