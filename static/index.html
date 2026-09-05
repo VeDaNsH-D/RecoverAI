@@ -11,250 +11,218 @@
   <!-- =========================================================================
        TOP FLOATING PILL BAR & CONTROLS
        ========================================================================= -->
-  <header class="top-header">
-    <!-- Left: Brand Core Pill -->
-    <div class="brand-pill">
-      <div class="brand-icon-orb">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-          <polyline points="17 6 23 6 23 12"></polyline>
-        </svg>
+  <!-- =========================================================================
+       RAZORPAY ENTERPRISE TOP HEADER & NAVIGATION
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="header-main-row">
+      <!-- Left: Brand Core -->
+      <div class="brand-group">
+        <div class="brand-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <div class="brand-name">
+            RecoverAI <span class="badge-brand">RAZORPAY RECOVERY</span>
+          </div>
+          <div class="brand-sub">Autonomous AI Revenue Recovery Engine • Track 03</div>
+        </div>
       </div>
-      <div class="brand-title">
-        RecoverAI <span class="brand-tag">OPS_CONSOLE</span>
+
+      <!-- Center: Navigation Tabs -->
+      <nav class="nav-tabs" id="appNavTabs">
+        <button class="nav-tab-btn active" data-view="view-pipeline" id="btnViewPipeline">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          Pipeline
+        </button>
+
+        <button class="nav-tab-btn" data-view="view-queue" id="btnViewQueue">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          Recovery Queue <span class="nav-badge" id="queueBadgeCount">0</span>
+        </button>
+
+        <button class="nav-tab-btn" data-view="view-analytics" id="btnViewAnalytics">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Analytics & Funnel
+        </button>
+      </nav>
+
+      <!-- Right: Search & Actions -->
+      <div class="header-actions">
+        <div class="header-search-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="aiQueryInput" placeholder="Search case ID, customer..." />
+        </div>
+
+        <div class="badge-test-mode" title="Operating in controlled sandbox mode with Razorpay test endpoints">
+          <span class="pulse-dot"></span>
+          TEST MODE
+        </div>
+
+        <button class="btn-sync" id="btnTriggerSimulation" title="Refresh live telemetry from engine">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          Sync Telemetry
+        </button>
       </div>
     </div>
 
-    <!-- Center: Floating View Mode Switcher & Canvas Controls -->
-    <div class="floating-toolbar">
-      <button class="tool-btn active" data-view="view-constellation" id="btnViewConstellation" title="Constellation Orbital Graph">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"></circle><circle cx="19" cy="5" r="2"></circle><circle cx="5" cy="19" r="2"></circle><circle cx="19" cy="19" r="2"></circle><circle cx="5" cy="5" r="2"></circle><line x1="12" y1="9" x2="19" y2="5"></line><line x1="12" y1="15" x2="5" y2="19"></line><line x1="15" y1="12" x2="19" y2="19"></line><line x1="9" y1="12" x2="5" y2="5"></line></svg>
-        Constellation
-      </button>
-
-      <button class="tool-btn" data-view="view-dendrogram" id="btnViewDendrogram" title="Horizontal Causal Branching Tree">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="15" y="3" width="6" height="6" rx="1"></rect><rect x="15" y="15" width="6" height="6" rx="1"></rect><line x1="9" y1="6" x2="15" y2="6"></line><line x1="9" y1="6" x2="9" y2="18"></line><line x1="9" y1="18" x2="15" y2="18"></line></svg>
-        Causal Tree
-      </button>
-
-      <button class="tool-btn" data-view="view-subscriptions" id="btnViewSubscriptions" title="Active Recurring SaaS Subscriptions">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-        Subscriptions <span class="brand-tag" id="subBadgeCount" style="margin-left:2px;">0</span>
-      </button>
-
-      <button class="tool-btn" data-view="view-queue" id="btnViewQueue" title="High-Density Recovery Queue">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-        Queue <span class="brand-tag" id="queueBadgeCount" style="margin-left:2px;">0</span>
-      </button>
-
-      <button class="tool-btn" data-view="view-analytics" id="btnViewAnalytics" title="Causal Funnel & Recovery Trends">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        Analytics
-      </button>
-
-      <div class="tool-separator"></div>
-
-      <!-- Canvas Camera Controls -->
-      <button class="tool-btn tool-icon-btn" id="btnZoomIn" title="Zoom In">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-      <button class="tool-btn tool-icon-btn" id="btnZoomOut" title="Zoom Out">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-      <button class="tool-btn tool-icon-btn" id="btnResetCamera" title="Reset Orbit Camera">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
-      </button>
-    </div>
-
-    <!-- Right: Test Mode, Health & Refresh -->
-    <div class="top-right-group">
-      <div class="badge badge-test-mode" title="Operating in controlled sandbox mode with simulated/test Razorpay endpoints">
-        <span class="pulse-dot"></span>
-        TEST MODE (razorpay_test)
+    <!-- Global Executive KPI Strip (Razorpay Style) -->
+    <div class="global-kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Recovery Rate</span>
+          <span class="kpi-tag kpi-tag-cyan">Model Yield</span>
+        </div>
+        <div class="kpi-val text-cyan" id="kpiRecoveryRate">0.0%</div>
+        <div class="kpi-sub">Incremental recovery rate</div>
       </div>
 
-      <button class="btn-pill btn-primary-pill" id="btnTriggerSimulation" title="Run instant recovery evaluation cycle">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        Sync Telemetry
-      </button>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Revenue at Risk</span>
+          <span class="kpi-tag kpi-tag-amber">Detected</span>
+        </div>
+        <div class="kpi-val text-amber" id="kpiRevenueAtRisk">₹0.00</div>
+        <div class="kpi-sub">Total gross uncollected</div>
+      </div>
+
+      <div class="kpi-card kpi-card-highlight">
+        <div class="kpi-header">
+          <span class="kpi-label">RecoverAI Net</span>
+          <span class="kpi-tag kpi-tag-emerald">Attributed</span>
+        </div>
+        <div class="kpi-val text-emerald" id="kpiNetRecovered">₹0.00</div>
+        <div class="kpi-sub">Gross recovery − Action costs</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Provider Auto-Recovery</span>
+          <span class="kpi-tag kpi-tag-violet">Independent</span>
+        </div>
+        <div class="kpi-val text-violet" id="kpiProviderGross">₹0.00</div>
+        <div class="kpi-sub">Razorpay baseline retry yield</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-label">Active Cases</span>
+          <span class="kpi-tag kpi-tag-white">In Pipeline</span>
+        </div>
+        <div class="kpi-val text-bright" id="kpiActiveCases">0</div>
+        <div class="kpi-sub">Cases undergoing intervention</div>
+      </div>
     </div>
   </header>
 
-  <!-- =========================================================================
-       LEFT VERTICAL TIMELINE RAIL (as in 00:03-00:05)
-       ========================================================================= -->
-  <aside class="left-timeline-rail">
-    <div class="timeline-track-line"></div>
-    <div class="timeline-step-list">
-      <button class="timeline-step-btn active" data-period="all" title="View All Recovery Incidents">
-        <div class="timeline-step-label-box">ALL</div>
-        <div class="timeline-step-dot"></div>
-      </button>
-      <button class="timeline-step-btn" data-period="2026-q3" title="Q3 2026 Cohort">
-        <div class="timeline-step-label-box">2026</div>
-        <div class="timeline-step-dot"></div>
-      </button>
-      <button class="timeline-step-btn" data-period="aug" title="August Billing Cycles">
-        <div class="timeline-step-label-box">AUG</div>
-        <div class="timeline-step-dot"></div>
-      </button>
-      <button class="timeline-step-btn" data-period="sep" title="September Billing Cycles">
-        <div class="timeline-step-label-box">SEP</div>
-        <div class="timeline-step-dot"></div>
-      </button>
-      <button class="timeline-step-btn" data-period="live" title="Live Today Telemetry">
-        <div class="timeline-step-label-box">LIVE</div>
-        <div class="timeline-step-dot"></div>
-      </button>
-    </div>
-  </aside>
-
-  <!-- Bottom Left Interactive Legend -->
-  <div class="bottom-left-legend">
-    <div class="legend-title">Cosmos Entity Legend</div>
-    <div class="legend-item" data-filter-cluster="subscription">
-      <span class="legend-dot legend-dot-sub"></span>
-      <span>Subscriptions (SaaS)</span>
-    </div>
-    <div class="legend-item" data-filter-cluster="direct">
-      <span class="legend-dot legend-dot-direct"></span>
-      <span>One-Off Checkouts</span>
-    </div>
-    <div class="legend-item" data-filter-cluster="high_value">
-      <span class="legend-dot legend-dot-high"></span>
-      <span>High-Value Capital</span>
-    </div>
-    <div class="legend-item" data-filter-cluster="tech_fail">
-      <span class="legend-dot legend-dot-tech"></span>
-      <span>Technical Gateways</span>
-    </div>
-    <div class="legend-item" data-filter-cluster="settled">
-      <span class="legend-dot legend-dot-settled"></span>
-      <span>Verified Recovered</span>
-    </div>
-  </div>
-
   <!-- Global Alert Banner Container -->
-  <div id="alertBannerContainer" style="position:absolute;top:65px;left:50%;transform:translateX(-50%);z-index:90;width:520px;"></div>
+  <div id="alertBannerContainer"></div>
 
   <!-- =========================================================================
        MAIN VIEWPORT CONTAINER
        ========================================================================= -->
   <main class="viewport-container">
 
-    <!-- VIEW 1: CONSTELLATION ORBITAL GRAPH CANVAS -->
-    <section class="view-panel active" id="view-constellation">
-      <canvas id="constellationCanvas"></canvas>
-      
-      <!-- Floating Node Tooltip -->
-      <div class="canvas-tooltip" id="canvasTooltip">
-        <div class="tooltip-title" id="ttTitle">Case ID</div>
-        <div class="tooltip-meta" id="ttMeta">Customer • Action</div>
-        <div class="tooltip-amount" id="ttAmount">₹0.00</div>
-      </div>
-    </section>
-
-    <!-- VIEW 2: HORIZONTAL CAUSAL TREE / DENDROGRAM (00:11 - 00:17) -->
-    <section class="view-panel" id="view-dendrogram">
-      <div class="dendrogram-viewport">
-        <svg class="dendrogram-svg-overlay" id="dendrogramSvg"></svg>
-        <div class="dendrogram-layout">
-
-          <!-- 3D Sphere Entity Orb (Matches Video 00:11) -->
-          <div class="entity-orb-node" id="treeEntityOrb">
-            <div class="entity-orb-glow">
-              <div class="entity-orb-inner-pulse"></div>
+    <!-- VIEW 1: RECOVERY PIPELINE OVERVIEW (Default Landing) -->
+    <section class="view-panel active" id="view-pipeline">
+      <div class="pipeline-view-container">
+        <!-- 5-Stage Pipeline Strip -->
+        <div class="card pipeline-strip-card">
+          <div class="pipeline-strip-header">
+            <div>
+              <h3 class="font-bold text-bright" style="font-size:1.15rem;">Causal Recovery Pipeline</h3>
+              <p class="text-dim text-xs mono" style="margin-top:2px;">DETECT → DECIDE → ACT → OBSERVE → ATTRIBUTE</p>
             </div>
-            <div class="entity-title-box">
-              <div class="entity-name" id="treeEntityName">Case case_••••</div>
-              <div class="entity-id" id="treeEntityCustomer">cust_••••91A2</div>
-              <div class="entity-state-badge state-badge-RECOVERED" id="treeEntityState">RECOVERED</div>
+            <div class="badge-brand">LIVE FUNNEL TELEMETRY</div>
+          </div>
+
+          <div class="pipeline-stages" id="pipelineStages">
+            <div class="pipeline-stage" data-stage="at_risk">
+              <div class="stage-icon" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.45);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </div>
+              <div class="stage-count text-amber" id="pipeAtRisk">0</div>
+              <div class="stage-label">01. At Risk</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+
+            <div class="pipeline-stage" data-stage="decided">
+              <div class="stage-icon" style="background:rgba(6,182,212,0.15);border-color:rgba(6,182,212,0.45);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="stage-count text-cyan" id="pipeDecided">0</div>
+              <div class="stage-label">02. Decided</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+
+            <div class="pipeline-stage" data-stage="actioned">
+              <div class="stage-icon" style="background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.45);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>
+              </div>
+              <div class="stage-count text-bright" id="pipeActioned">0</div>
+              <div class="stage-label">03. Actioned</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+
+            <div class="pipeline-stage" data-stage="settled">
+              <div class="stage-icon" style="background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.45);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <div class="stage-count text-violet" id="pipeSettled">0</div>
+              <div class="stage-label">04. Settled</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+
+            <div class="pipeline-stage" data-stage="recovered">
+              <div class="stage-icon" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.45);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </div>
+              <div class="stage-count text-emerald" id="pipeRecovered">0</div>
+              <div class="stage-label">05. Recovered</div>
             </div>
           </div>
 
-          <!-- Branching Categories Column -->
-          <div class="dendrogram-branch-col">
-            <div class="branch-card active" data-branch="candidates">
-              <div class="branch-label">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                Candidate Policy Traces
-              </div>
-              <div class="branch-count text-emerald" id="branchCountCandidates">5</div>
+          <!-- Financial Summary Row -->
+          <div class="pipeline-financial-row" id="pipelineFinancials">
+            <div class="pipe-fin-item">
+              <span class="pipe-fin-label">Detected Revenue at Risk</span>
+              <span class="pipe-fin-val text-amber" id="pipeRevenueAtRisk">₹0.00</span>
             </div>
-
-            <div class="branch-card" data-branch="context">
-              <div class="branch-label">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                Incident Context
-              </div>
-              <div class="branch-count" id="branchCountContext">3</div>
+            <div class="pipe-fin-item">
+              <span class="pipe-fin-label">RecoverAI Net Recovered</span>
+              <span class="pipe-fin-val text-emerald" id="pipeNetRecovered">₹0.00</span>
             </div>
-
-            <div class="branch-card" data-branch="execution">
-              <div class="branch-label">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                Execution Telemetry
-              </div>
-              <div class="branch-count" id="branchCountExecution">1</div>
+            <div class="pipe-fin-item">
+              <span class="pipe-fin-label">Pipeline Recovery Rate</span>
+              <span class="pipe-fin-val text-cyan" id="pipeRecoveryRate">0.0%</span>
             </div>
-
-            <div class="branch-card" data-branch="settlement">
-              <div class="branch-label">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Settlement Evidence
-              </div>
-              <div class="branch-count text-cyan" id="branchCountSettlement">1</div>
+            <div class="pipe-fin-item">
+              <span class="pipe-fin-label">Action Execution Costs</span>
+              <span class="pipe-fin-val text-rose" id="pipeActionCosts">₹0.00</span>
             </div>
           </div>
-
-          <!-- Leaf Nodes Cascade Column -->
-          <div class="dendrogram-leaf-col" id="dendrogramLeafCol">
-            <!-- Populated dynamically -->
-          </div>
-
         </div>
-      </div>
-    </section>
 
-    <!-- VIEW 3: RECURRING SUBSCRIPTIONS PANEL -->
-    <section class="view-panel" id="view-subscriptions">
-      <div class="table-view-container">
-        <div class="card">
+        <!-- Recent Recovery Activity Feed -->
+        <div class="card pipeline-activity-card">
           <div class="flex-between" style="margin-bottom:1rem;">
             <div>
-              <h3 class="font-bold text-bright" style="font-size:1.1rem;">Recurring SaaS Subscriptions Registry</h3>
-              <span class="text-dim text-xs mono">AUTHORITATIVE RAZORPAY INVOICE SETTLEMENT RECONCILIATION</span>
+              <h3 class="font-bold text-bright" style="font-size:1.05rem;">Live Recovery Interventions Feed</h3>
+              <p class="text-dim text-xs mono">Real-time payment failure detections & automated recovery actions</p>
             </div>
-            <div class="text-xs text-dim mono">
-              SETTLEMENT EVIDENCE REQUIRED FOR RECOVERY
-            </div>
+            <span class="badge-brand">REAL-TIME EVENTS</span>
           </div>
-
-          <div style="overflow-x:auto;">
-            <table class="data-table" id="subscriptionsTable">
-              <thead>
-                <tr>
-                  <th>Subscription ID</th>
-                  <th>Customer</th>
-                  <th>Status</th>
-                  <th>Billing Cycle</th>
-                  <th>Amount Due</th>
-                  <th>Charge Attempts</th>
-                  <th>Recoverable</th>
-                  <th>Last Updated</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="subscriptionsTableBody">
-                <!-- Dynamically populated -->
-              </tbody>
-            </table>
+          <div id="pipelineActivityFeed" class="activity-feed-list">
+            <div class="text-dim text-xs mono text-center" style="padding:2.5rem;">Loading live recovery events...</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 4: HIGH-DENSITY DATA QUEUE -->
+    <!-- VIEW 2: HIGH-DENSITY DATA QUEUE -->
     <section class="view-panel" id="view-queue">
       <div class="table-view-container">
         <div class="card">
@@ -340,7 +308,7 @@
           </div>
 
           <!-- Pagination Bar -->
-          <div class="flex-between" style="padding-top:1rem;font-size:0.775rem;color:var(--text-dim);">
+          <div class="flex-between" style="padding-top:1.25rem;font-size:0.775rem;color:var(--text-dim);">
             <div id="paginationInfo">Showing 0 of 0 cases</div>
             <div class="flex-align-center">
               <button id="prevPageBtn" class="btn-pill" style="padding:0.3rem 0.75rem;" disabled>Previous</button>
@@ -352,15 +320,15 @@
       </div>
     </section>
 
-    <!-- VIEW 5: ANALYTICS & CAUSAL FUNNEL -->
+    <!-- VIEW 3: ANALYTICS & RECOVERY FUNNEL -->
     <section class="view-panel" id="view-analytics">
       <div class="analytics-view-container">
         <!-- 5-Stage Funnel -->
         <div class="card">
-          <div class="flex-between" style="margin-bottom:1rem;">
+          <div class="flex-between" style="margin-bottom:1.25rem;">
             <div>
-              <h3 class="font-bold text-bright" style="font-size:1.1rem;">5-Stage Causal Conversion Funnel</h3>
-              <span class="text-dim text-xs mono">DETERMINISTIC CAUSAL REVENUE LIFECYCLE</span>
+              <h3 class="font-bold text-bright" style="font-size:1.15rem;">Recovery Conversion Funnel</h3>
+              <span class="text-dim text-xs mono">END-TO-END REVENUE CONVERSION TELEMETRY</span>
             </div>
           </div>
           <div class="funnel-container" id="funnelContainer">
@@ -370,12 +338,12 @@
 
         <!-- Trends -->
         <div class="card">
-          <div class="flex-between" style="margin-bottom:1rem;">
+          <div class="flex-between" style="margin-bottom:1.25rem;">
             <div>
-              <h3 class="font-bold text-bright" style="font-size:1.1rem;">Time-Series Recovery Yield</h3>
-              <span class="text-dim text-xs mono">AGGREGATED REVENUE VOLUME OVER TIME</span>
+              <h3 class="font-bold text-bright" style="font-size:1.15rem;">Time-Series Recovery Yield</h3>
+              <span class="text-dim text-xs mono">SETTLED RECOVERED REVENUE OVER TIME</span>
             </div>
-            <select id="trendIntervalSelect" class="form-select" style="padding:0.25rem 0.5rem;font-size:0.75rem;">
+            <select id="trendIntervalSelect" class="form-select" style="padding:0.25rem 0.6rem;font-size:0.75rem;">
               <option value="daily" selected>Daily</option>
               <option value="weekly">Weekly</option>
             </select>
@@ -386,74 +354,6 @@
     </section>
 
   </main>
-
-  <!-- =========================================================================
-       BOTTOM FLOATING TELEMETRY DECK & AI ASSISTANT (00:03-00:10)
-       ========================================================================= -->
-  <footer class="bottom-dock">
-    <!-- Telemetry Chips -->
-    <div class="telemetry-pill-deck">
-      <div class="telemetry-chip">
-        <span class="chip-label">Recovery Rate</span>
-        <span class="chip-val text-cyan" id="kpiRecoveryRate">0.0%</span>
-      </div>
-
-      <div class="telemetry-chip">
-        <span class="chip-label">Revenue at Risk</span>
-        <span class="chip-val text-amber" id="kpiRevenueAtRisk">₹0.00</span>
-      </div>
-
-      <div class="telemetry-chip">
-        <span class="chip-label">RecoverAI Net</span>
-        <span class="chip-val text-emerald" id="kpiNetRecovered">₹0.00</span>
-      </div>
-
-      <div class="telemetry-chip">
-        <span class="chip-label">Provider Gross</span>
-        <span class="chip-val text-violet" id="kpiProviderGross">₹0.00</span>
-      </div>
-
-      <div class="telemetry-chip">
-        <span class="chip-label">Active Cases</span>
-        <span class="chip-val text-bright" id="kpiActiveCases">0</span>
-      </div>
-    </div>
-
-    <!-- AI Copilot Bar -->
-    <div class="ai-copilot-pill">
-      <button class="ai-sparkle-btn" id="btnToggleAIInsights">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-        AI Insights
-      </button>
-      <input type="text" class="ai-input-pill" id="aiQueryInput" placeholder="Ask AI recovery copilot or filter cases (e.g. 'Show subscription retry exhaustion')...">
-    </div>
-
-    <!-- Expanded AI Insights Drawer -->
-    <div class="ai-insights-drawer" id="aiInsightsDrawer">
-      <div class="flex-between">
-        <span class="mono text-xs font-bold text-cyan">[AI_RECOVERY_COPILOT // LIVE_INTELLIGENCE]</span>
-        <button style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.2rem;" id="btnCloseAIInsights">&times;</button>
-      </div>
-      <div class="ai-insight-card">
-        <div class="ai-insight-title">
-          <span>Critical Subscription Alert</span>
-          <span class="badge badge-test-mode" style="padding:1px 6px;font-size:0.65rem;">HIGH_PRIORITY</span>
-        </div>
-        <div class="ai-insight-body" id="aiInsightAlertText">
-          2 high-value subscription billing cycles have exhausted provider retries (retry_count >= 2). Recommended bounded intervention: <strong>payment_link</strong> with estimated net yield advantage +₹4,978.
-        </div>
-      </div>
-      <div class="ai-insight-card">
-        <div class="ai-insight-title">
-          <span>Economic Uplift Policy Suggestion</span>
-          <span class="text-emerald font-bold mono text-xs">+18.4% NET YIELD</span>
-        </div>
-        <div class="ai-insight-body">
-          GBM champion model estimates transitioning technical transient failures directly to SMS reminders yields ₹3,200 higher net recovery than immediate blanket retries.
-        </div>
-      </div>
-    </div>
-  </footer>
 
   <!-- =========================================================================
        RIGHT SLIDE-OUT DEEP INSPECTION DRAWER (00:18 - 00:20)
@@ -504,7 +404,13 @@
         <div class="drawer-metric-card">
           <div class="drawer-metric-label">Settlement Status</div>
           <div class="drawer-metric-val" id="dtOutStatus">PENDING</div>
+          <div class="mono text-xs text-dim" id="dtSettlementEvidence" style="display:none;margin-top:0.25rem;word-break:break-all;">-</div>
         </div>
+      </div>
+      
+      <div class="drawer-metric-card" style="margin-bottom:1rem;">
+        <div class="drawer-metric-label">Recovery Attribution</div>
+        <div class="drawer-metric-val text-dim" id="dtAttribution" style="font-size:0.9rem;">—</div>
       </div>
 
       <!-- Subscription Metadata Box (Visible if subscription) -->
@@ -533,7 +439,7 @@
 
       <!-- Candidate Actions Comparison Matrix -->
       <div class="candidate-actions-card">
-        <div class="drawer-metric-label">Candidate Policy Traces (P(Y|a) vs Cost)</div>
+        <div class="drawer-metric-label">Action Comparison (Probability vs Cost)</div>
         <table class="candidate-table">
           <thead>
             <tr>
@@ -558,23 +464,6 @@
       </div>
     </div>
   </aside>
-
-  <!-- SINGLE SUBSCRIPTION SYNC CONFIRMATION MODAL -->
-  <div style="position:fixed;inset:0;background:rgba(3,5,7,0.85);backdrop-filter:blur(8px);z-index:110;display:none;align-items:center;justify-content:center;" id="syncModal">
-    <div style="background:#0a121a;border:1px solid var(--border-medium);border-radius:var(--radius-xl);padding:1.5rem;max-width:480px;width:100%;box-shadow:var(--shadow-glass);">
-      <div class="flex-between" style="margin-bottom:1rem;">
-        <h3 class="font-bold text-bright">Confirm Subscription Reconciliation</h3>
-        <button style="background:none;border:none;color:var(--text-dim);font-size:1.5rem;cursor:pointer;" id="syncModalCloseBtn">&times;</button>
-      </div>
-      <p class="text-sm text-muted">Reconciling subscription with authoritative Razorpay invoice records:</p>
-      <div class="mono font-bold text-cyan" id="syncTargetSubscriptionId" style="background:rgba(6,182,212,0.1);padding:0.75rem;border-radius:var(--radius-md);margin:0.75rem 0;text-align:center;">-</div>
-      <p class="text-xs text-dim">Settlement Rule: Open cases will only transition to RECOVERED upon explicit invoice payment proof.</p>
-      <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.5rem;">
-        <button class="btn-pill" id="cancelSyncBtn">Cancel</button>
-        <button class="btn-pill btn-primary-pill" id="confirmSyncBtn">Reconcile Subscription</button>
-      </div>
-    </div>
-  </div>
 
   <script src="/dashboard/dashboard.js"></script>
 </body>

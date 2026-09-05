@@ -1,46 +1,30 @@
 /**
- * RecoverAI — Merchant Recovery Command Center (Milestone 10 Reference Edition)
- * Dynamic Cosmic Constellation Graph, Causal Branching Dendrogram, and AI Copilot Engine
+ * RecoverAI — Merchant Recovery Command Center
+ * Razorpay Enterprise Recovery Console (Track 03)
  * 
  * Strict Invariants:
  * 1. Observability and control surface ONLY.
  * 2. 64-bit integer paise financial handling via formatPaiseINR().
  * 3. Privacy-protected masked customer IDs (cust_••••XXXX).
- * 4. Zero external UI dependencies (Pure HTML5 Canvas, SVG, ES6).
+ * 4. Zero external UI dependencies (Pure HTML5, SVG, ES6).
  */
 
 (function () {
   "use strict";
 
   // =========================================================================
-  // APPLICATION STATE & CONSTANTS
+  // APPLICATION STATE
   // =========================================================================
 
   const state = {
-    activeView: "view-constellation",
-    camera: {
-      x: 0,
-      y: 0,
-      scale: 0.85,
-      targetX: 0,
-      targetY: 0,
-      targetScale: 0.85,
-      isDragging: false,
-      startX: 0,
-      startY: 0,
-    },
+    activeView: "view-pipeline",
     overview: null,
     cases: [],
-    subscriptions: [],
     selectedCase: null,
-    selectedBranch: "candidates",
-    hoveredNode: null,
-    activeTimePeriod: "all",
-    particles: [],
-    activeFilterCluster: null,
+    selectedCaseCandidates: null,
     queue: {
       page: 0,
-      limit: 20,
+      limit: 15,
       totalCount: 0,
       search: "",
       state: "",
@@ -49,18 +33,7 @@
       isSubscription: "",
     },
     autoRefreshInterval: 10000,
-    timerId: null,
-    pendingSyncSubId: null,
   };
-
-  // Compact, Responsive Cluster Definitions matching reference video
-  const CLUSTERS = [
-    { id: "subscription", label: "Subscriptions", color: "#a78bfa", glow: "rgba(167, 139, 250, 0.45)", radius: 22, angle: -Math.PI * 0.72, dist: 145 },
-    { id: "direct", label: "Direct Checkouts", color: "#38bdf8", glow: "rgba(56, 189, 248, 0.45)", radius: 20, angle: -Math.PI * 0.18, dist: 155 },
-    { id: "high_value", label: "High-Value Capital", color: "#fbbf24", glow: "rgba(251, 191, 36, 0.45)", radius: 24, angle: Math.PI * 0.28, dist: 150 },
-    { id: "tech_fail", label: "Technical Gateways", color: "#fb7185", glow: "rgba(251, 113, 133, 0.45)", radius: 19, angle: Math.PI * 0.78, dist: 160 },
-    { id: "settled", label: "Verified Recovered", color: "#34d399", glow: "rgba(52, 211, 153, 0.45)", radius: 26, angle: Math.PI * 1.22, dist: 140 },
-  ];
 
   // =========================================================================
   // FORMATTING & DATA UTILITIES
@@ -147,782 +120,116 @@
   }
 
   // =========================================================================
-  // CONSTELLATION GRAPH CANVAS ENGINE
-  // =========================================================================
-
-  let canvas, ctx, animFrameId;
-  let canvasWidth = 0, canvasHeight = 0;
-  let graphNodes = [];
-  let graphLinks = [];
-
-  function autoFitCamera() {
-    if (!canvasWidth || !canvasHeight) return;
-    const minDim = Math.min(canvasWidth, canvasHeight);
-    const fitScale = Math.min(1.0, Math.max(0.65, minDim / 750));
-    state.camera.targetScale = fitScale;
-    state.camera.targetX = 0;
-    state.camera.targetY = 0;
-  }
-
-  function initCanvas() {
-    canvas = document.getElementById("constellationCanvas");
-    if (!canvas) return;
-    ctx = canvas.getContext("2d");
-
-    function resize() {
-      canvasWidth = canvas.parentElement.clientWidth;
-      canvasHeight = canvas.parentElement.clientHeight;
-      canvas.width = canvasWidth * window.devicePixelRatio;
-      canvas.height = canvasHeight * window.devicePixelRatio;
-      canvas.style.width = canvasWidth + "px";
-      canvas.style.height = canvasHeight + "px";
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      autoFitCamera();
-    }
-    window.addEventListener("resize", resize);
-    resize();
-
-    // Setup Interactive Mouse Events
-    canvas.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    canvas.addEventListener("click", onCanvasClick);
-
-    // Cosmic Particles
-    state.particles = [];
-    for (let i = 0; i < 70; i++) {
-      state.particles.push({
-        x: (Math.random() - 0.5) * 1400,
-        y: (Math.random() - 0.5) * 1000,
-        size: Math.random() * 1.5 + 0.5,
-        alpha: Math.random() * 0.5 + 0.2,
-        speed: Math.random() * 0.2 + 0.05,
-      });
-    }
-
-    startAnimationLoop();
-  }
-
-  function buildGraphNetwork() {
-    graphNodes = [];
-    graphLinks = [];
-
-    // 1. Central Core Hub Node
-    const core = {
-      id: "core_recoverai",
-      type: "core",
-      label: "RecoverAI Core",
-      x: 0,
-      y: 0,
-      radius: 34,
-      color: "#eab308",
-      glow: "rgba(234, 179, 8, 0.5)",
-      pulse: 0,
-    };
-    graphNodes.push(core);
-
-    // 2. Primary Orbiting Domain Clusters
-    CLUSTERS.forEach((c) => {
-      const cx = Math.cos(c.angle) * c.dist;
-      const cy = Math.sin(c.angle) * c.dist;
-      const cNode = {
-        id: `cluster_${c.id}`,
-        type: "cluster",
-        clusterId: c.id,
-        label: c.label,
-        x: cx,
-        y: cy,
-        radius: c.radius,
-        color: c.color,
-        glow: c.glow,
-        pulse: Math.random() * Math.PI,
-      };
-      graphNodes.push(cNode);
-      graphLinks.push({ from: core, to: cNode, color: c.color, energyPulses: [0.2, 0.65] });
-    });
-
-    // 3. Child Case Nodes distributed around their respective clusters
-    if (state.cases && state.cases.length > 0) {
-      state.cases.forEach((item, idx) => {
-        let clusterId = "direct";
-        if (item.current_state === "RECOVERED") clusterId = "settled";
-        else if (item.is_subscription) clusterId = "subscription";
-        else if (item.amount_paise >= 500000) clusterId = "high_value";
-        else if (item.failure_type === "temporary_failure" || item.current_state === "EXECUTION_FAILED") clusterId = "tech_fail";
-
-        const parentCluster = graphNodes.find((n) => n.id === `cluster_${clusterId}`);
-        if (!parentCluster) return;
-
-        const subAngle = (idx * 0.75) + (Math.random() * 0.2);
-        const subDist = 42 + (Math.random() * 38);
-        const nx = parentCluster.x + Math.cos(subAngle) * subDist;
-        const ny = parentCluster.y + Math.sin(subAngle) * subDist;
-
-        const caseNode = {
-          id: item.case_id,
-          type: "case",
-          clusterId: clusterId,
-          caseData: item,
-          label: maskCustomerId(item.customer_id),
-          amount: item.amount_paise,
-          state: item.current_state,
-          action: item.recommended_action,
-          x: nx,
-          y: ny,
-          radius: Math.max(5, Math.min(10, 5 + Math.log10(item.amount_paise / 1000 + 1) * 2)),
-          color: parentCluster.color,
-          glow: parentCluster.glow,
-          pulse: Math.random() * Math.PI,
-        };
-
-        graphNodes.push(caseNode);
-        graphLinks.push({ from: parentCluster, to: caseNode, color: parentCluster.color, energyPulses: [Math.random()] });
-      });
-    }
-  }
-
-  function startAnimationLoop() {
-    if (animFrameId) cancelAnimationFrame(animFrameId);
-
-    function loop() {
-      state.camera.x += (state.camera.targetX - state.camera.x) * 0.12;
-      state.camera.y += (state.camera.targetY - state.camera.y) * 0.12;
-      state.camera.scale += (state.camera.targetScale - state.camera.scale) * 0.12;
-
-      if (state.activeView === "view-constellation") {
-        renderCanvas();
-      }
-
-      animFrameId = requestAnimationFrame(loop);
-    }
-    loop();
-  }
-
-  function renderCanvas() {
-    if (!ctx) return;
-
-    ctx.save();
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-    // Apply Camera Transform
-    ctx.translate(canvasWidth / 2 + state.camera.x, canvasHeight / 2 + state.camera.y);
-    ctx.scale(state.camera.scale, state.camera.scale);
-
-    const now = Date.now() * 0.002;
-
-    // 1. Draw Cosmic Star Dust Particles
-    state.particles.forEach((p) => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y + Math.sin(now * p.speed + p.x) * 4, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(148, 180, 220, ${p.alpha * 0.5})`;
-      ctx.fill();
-    });
-
-    // 2. Draw Orbital Concentric Distance Rings
-    [140, 150, 160].forEach((r, idx) => {
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(148, 163, 184, ${0.03 + idx * 0.015})`;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 6]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    });
-
-    // 3. Draw Connecting Bezier Filaments & Flowing Energy Pulses
-    graphLinks.forEach((link) => {
-      const isFiltered = state.activeFilterCluster && (link.to.clusterId !== state.activeFilterCluster && link.from.clusterId !== state.activeFilterCluster);
-      if (isFiltered) return;
-
-      const isHovered = state.hoveredNode && (state.hoveredNode === link.from || state.hoveredNode === link.to);
-      const strokeAlpha = isHovered ? 0.75 : (link.from.type === "core" ? 0.28 : 0.14);
-
-      ctx.beginPath();
-      ctx.moveTo(link.from.x, link.from.y);
-      const midX = (link.from.x + link.to.x) / 2 + (link.to.y - link.from.y) * 0.08;
-      const midY = (link.from.y + link.to.y) / 2 + (link.from.x - link.to.x) * 0.08;
-      ctx.quadraticCurveTo(midX, midY, link.to.x, link.to.y);
-      ctx.strokeStyle = isHovered ? link.color : `rgba(148, 163, 184, ${strokeAlpha})`;
-      ctx.lineWidth = isHovered ? 2 : 1;
-      ctx.stroke();
-
-      // Energy Pulses along the curve
-      link.energyPulses.forEach((pulseOffset, pIdx) => {
-        const t = (now * 0.35 + pulseOffset + pIdx * 0.5) % 1.0;
-        const px = Math.pow(1 - t, 2) * link.from.x + 2 * (1 - t) * t * midX + Math.pow(t, 2) * link.to.x;
-        const py = Math.pow(1 - t, 2) * link.from.y + 2 * (1 - t) * t * midY + Math.pow(t, 2) * link.to.y;
-
-        ctx.beginPath();
-        ctx.arc(px, py, isHovered ? 3 : 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = link.color;
-        ctx.shadowColor = link.color;
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-    });
-
-    // 4. Draw Graph Nodes
-    graphNodes.forEach((node) => {
-      const isFiltered = state.activeFilterCluster && node.clusterId && node.clusterId !== state.activeFilterCluster;
-      if (isFiltered) return;
-
-      const isHovered = state.hoveredNode === node;
-      const pulseSize = Math.sin(now * 2 + node.pulse) * 2;
-
-      if (node.type === "core") {
-        // Sun Hub
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 10 + pulseSize, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(234, 179, 8, 0.08)";
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(234, 179, 8, 0.35)";
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([5, 5]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        const grad = ctx.createRadialGradient(node.x - 6, node.y - 6, 3, node.x, node.y, node.radius);
-        grad.addColorStop(0, "#fef08a");
-        grad.addColorStop(0.4, "#eab308");
-        grad.addColorStop(1, "#ca8a04");
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.shadowColor = "rgba(234, 179, 8, 0.8)";
-        ctx.shadowBlur = 20;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        ctx.fillStyle = "#020609";
-        ctx.font = "bold 9px ui-monospace, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("RECOVERAI", node.x, node.y - 3);
-        ctx.font = "8px ui-monospace, sans-serif";
-        ctx.fillText("CORE", node.x, node.y + 7);
-        ctx.restore();
-
-      } else if (node.type === "cluster") {
-        // 3D Sphere Orbiting Clusters
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius + 6 + (isHovered ? 3 : 0), 0, Math.PI * 2);
-        ctx.fillStyle = node.glow.replace("0.45", "0.14");
-        ctx.fill();
-
-        const grad = ctx.createRadialGradient(node.x - 5, node.y - 5, 2, node.x, node.y, node.radius);
-        grad.addColorStop(0, "#ffffff");
-        grad.addColorStop(0.35, node.color);
-        grad.addColorStop(0.9, "rgba(8, 15, 23, 0.95)");
-
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = isHovered ? 18 : 10;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        ctx.font = "bold 9px -apple-system, sans-serif";
-        ctx.fillStyle = "#ffffff";
-        ctx.textAlign = "center";
-        ctx.fillText(node.label, node.x, node.y + node.radius + 12);
-        ctx.restore();
-
-      } else {
-        // Child Case Nodes
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = isHovered ? "#ffffff" : node.color;
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = isHovered ? 14 : 5;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        if (isHovered) {
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, node.radius + 4, 0, Math.PI * 2);
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-    });
-
-    ctx.restore();
-  }
-
-  // =========================================================================
-  // MOUSE & CAMERA INTERACTION HANDLERS
-  // =========================================================================
-
-  function getCanvasMousePos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left - (canvasWidth / 2 + state.camera.x);
-    const my = e.clientY - rect.top - (canvasHeight / 2 + state.camera.y);
-    return {
-      x: mx / state.camera.scale,
-      y: my / state.camera.scale,
-      screenX: e.clientX,
-      screenY: e.clientY,
-    };
-  }
-
-  function onMouseDown(e) {
-    if (e.button !== 0) return;
-    state.camera.isDragging = true;
-    state.camera.startX = e.clientX - state.camera.targetX;
-    state.camera.startY = e.clientY - state.camera.targetY;
-  }
-
-  function onMouseMove(e) {
-    if (state.camera.isDragging) {
-      state.camera.targetX = e.clientX - state.camera.startX;
-      state.camera.targetY = e.clientY - state.camera.startY;
-      return;
-    }
-
-    if (state.activeView !== "view-constellation" || !canvas) return;
-    const pos = getCanvasMousePos(e);
-
-    let found = null;
-    for (let i = graphNodes.length - 1; i >= 0; i--) {
-      const node = graphNodes[i];
-      if (state.activeFilterCluster && node.clusterId && node.clusterId !== state.activeFilterCluster) continue;
-
-      const dx = pos.x - node.x;
-      const dy = pos.y - node.y;
-      if (dx * dx + dy * dy < (node.radius + 6) * (node.radius + 6)) {
-        found = node;
-        break;
-      }
-    }
-
-    state.hoveredNode = found;
-    const tooltip = document.getElementById("canvasTooltip");
-
-    if (found && tooltip) {
-      tooltip.style.display = "flex";
-      tooltip.style.left = `${pos.screenX}px`;
-      tooltip.style.top = `${pos.screenY}px`;
-
-      if (found.type === "core") {
-        document.getElementById("ttTitle").textContent = "RecoverAI Revenue Engine";
-        document.getElementById("ttMeta").textContent = `${state.overview?.total_cases || 0} Total Evaluated Incidents`;
-        document.getElementById("ttAmount").textContent = formatPaiseINR(state.overview?.recoverai_net_recovered_paise);
-      } else if (found.type === "cluster") {
-        document.getElementById("ttTitle").textContent = found.label;
-        document.getElementById("ttMeta").textContent = "Domain Entity Cluster";
-        document.getElementById("ttAmount").textContent = "Click to focus & inspect";
-      } else if (found.type === "case") {
-        document.getElementById("ttTitle").textContent = `Case: ${found.id}`;
-        document.getElementById("ttMeta").textContent = `${maskCustomerId(found.caseData.customer_id)} • ${found.action.toUpperCase()}`;
-        document.getElementById("ttAmount").textContent = formatPaiseINR(found.amount);
-      }
-    } else if (tooltip) {
-      tooltip.style.display = "none";
-    }
-  }
-
-  function onMouseUp() {
-    state.camera.isDragging = false;
-  }
-
-  function onWheel(e) {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-    state.camera.targetScale = Math.max(0.4, Math.min(2.5, state.camera.targetScale * zoomFactor));
-  }
-
-  function onCanvasClick() {
-    if (state.hoveredNode) {
-      const node = state.hoveredNode;
-      if (node.type === "cluster") {
-        state.camera.targetX = -node.x * 1.3;
-        state.camera.targetY = -node.y * 1.3;
-        state.camera.targetScale = 1.4;
-      } else if (node.type === "case") {
-        inspectCase(node.caseData.case_id);
-      }
-    }
-  }
-
-  // =========================================================================
-  // VIEW 2: DENDROGRAM / CAUSAL TREE ENGINE (00:11 - 00:17)
-  // =========================================================================
-
-  function renderDendrogramView(caseItem, detailData) {
-    if (!caseItem) return;
-
-    document.getElementById("treeEntityName").textContent = `Case ${caseItem.case_id}`;
-    document.getElementById("treeEntityCustomer").textContent = maskCustomerId(caseItem.customer_id);
-
-    // Dynamic State Badge with Correct Theme Color (Green for RECOVERED, Cyan for DECIDED, Amber for PENDING, Red for FAILED)
-    const stateEl = document.getElementById("treeEntityState");
-    if (stateEl) {
-      stateEl.className = `entity-state-badge state-badge-${caseItem.current_state}`;
-      stateEl.textContent = caseItem.current_state;
-    }
-
-    const leafCol = document.getElementById("dendrogramLeafCol");
-    if (!leafCol) return;
-
-    let leavesHtml = "";
-    if (state.selectedBranch === "candidates") {
-      const actions = [
-        { name: "no_action", prob: 0.05, cost: 0 },
-        { name: "retry", prob: 0.42, cost: 1500 },
-        { name: "payment_link", prob: 0.76, cost: 2200 },
-        { name: "reminder", prob: 0.38, cost: 800 },
-        { name: "escalate", prob: 0.55, cost: 5000 },
-      ];
-      actions.forEach((act) => {
-        const isSelected = act.name === caseItem.recommended_action;
-        const gross = Math.floor(act.prob * caseItem.amount_paise);
-        const net = gross - act.cost;
-        leavesHtml += `
-          <div class="leaf-item" onclick="window.inspectCase('${caseItem.case_id}')">
-            <div>
-              <div class="leaf-title text-bright">${act.name.toUpperCase()} ${isSelected ? '★ SELECTED' : ''}</div>
-              <div class="leaf-sub">P(Recovery): ${formatPercent(act.prob)} • Cost: ${formatPaiseINR(act.cost)}</div>
-            </div>
-            <div class="mono font-bold ${net > 0 ? 'text-emerald' : 'text-dim'}">${formatPaiseINR(net)}</div>
-          </div>
-        `;
-      });
-    } else if (state.selectedBranch === "context") {
-      leavesHtml = `
-        <div class="leaf-item">
-          <div><div class="leaf-title">Amount at Risk</div><div class="leaf-sub">Gross uncollected capital</div></div>
-          <div class="mono font-bold text-amber">${formatPaiseINR(caseItem.amount_paise)}</div>
-        </div>
-        <div class="leaf-item">
-          <div><div class="leaf-title">Failure Reason</div><div class="leaf-sub">Diagnostic classification</div></div>
-          <div class="mono text-bright">${escapeHTML(caseItem.failure_type || "temporary_failure")}</div>
-        </div>
-        <div class="leaf-item">
-          <div><div class="leaf-title">Prior Retries</div><div class="leaf-sub">Exhaustion boundary count</div></div>
-          <div class="mono font-bold">${caseItem.retry_count}</div>
-        </div>
-      `;
-    } else if (state.selectedBranch === "execution") {
-      const exec = detailData?.action_execution;
-      leavesHtml = `
-        <div class="leaf-item">
-          <div><div class="leaf-title">Dispatched Action</div><div class="leaf-sub">Provider gateway intervention</div></div>
-          <div class="mono font-bold text-cyan">${escapeHTML(exec?.action || caseItem.recommended_action)}</div>
-        </div>
-        <div class="leaf-item">
-          <div><div class="leaf-title">Provider Reference</div><div class="leaf-sub">Razorpay payment link / entity</div></div>
-          <div class="mono text-bright text-xs">${escapeHTML(exec?.provider_reference || "plink_test_recoverai")}</div>
-        </div>
-      `;
-    } else if (state.selectedBranch === "settlement") {
-      const out = detailData?.outcome_settlement;
-      leavesHtml = `
-        <div class="leaf-item">
-          <div><div class="leaf-title">Settlement State</div><div class="leaf-sub">Authoritative invoice proof</div></div>
-          <div class="mono font-bold text-emerald">${escapeHTML(out?.outcome_status?.toUpperCase() || caseItem.current_state)}</div>
-        </div>
-        <div class="leaf-item">
-          <div><div class="leaf-title">Recovered Amount</div><div class="leaf-sub">Net financial realization</div></div>
-          <div class="mono font-bold text-emerald">${formatPaiseINR(out?.recovered_amount_paise || (caseItem.current_state === 'RECOVERED' ? caseItem.amount_paise : 0))}</div>
-        </div>
-      `;
-    }
-
-    leafCol.innerHTML = leavesHtml;
-    drawDendrogramTendrils();
-  }
-
-  function drawDendrogramTendrils() {
-    const svg = document.getElementById("dendrogramSvg");
-    if (!svg) return;
-    const orb = document.getElementById("treeEntityOrb");
-    const activeBranch = document.querySelector(".branch-card.active");
-    if (!orb || !activeBranch) return;
-
-    const orbRect = orb.getBoundingClientRect();
-    const branchRect = activeBranch.getBoundingClientRect();
-    const svgRect = svg.getBoundingClientRect();
-
-    const x1 = orbRect.right - svgRect.left;
-    const y1 = orbRect.top + orbRect.height / 2 - svgRect.top;
-    const x2 = branchRect.left - svgRect.left;
-    const y2 = branchRect.top + branchRect.height / 2 - svgRect.top;
-
-    const cx1 = x1 + (x2 - x1) * 0.5;
-    const cx2 = cx1;
-
-    svg.innerHTML = `
-      <path class="tendril-line active" d="M ${x1},${y1} C ${cx1},${y1} ${cx2},${y2} ${x2},${y2}" />
-    `;
-  }
-
-  // =========================================================================
   // VIEW SWITCHER & NAVIGATION
   // =========================================================================
 
   function switchView(viewId) {
     state.activeView = viewId;
 
-    document.querySelectorAll(".tool-btn[data-view]").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".nav-tab-btn[data-view]").forEach((b) => b.classList.remove("active"));
     document.querySelectorAll(".view-panel").forEach((p) => p.classList.remove("active"));
 
-    const targetBtn = document.querySelector(`.tool-btn[data-view="${viewId}"]`);
+    const targetBtn = document.querySelector(`.nav-tab-btn[data-view="${viewId}"]`);
     const targetPanel = document.getElementById(viewId);
 
     if (targetBtn) targetBtn.classList.add("active");
     if (targetPanel) targetPanel.classList.add("active");
 
-    if (viewId === "view-subscriptions") {
-      loadSubscriptions();
+    if (viewId === "view-pipeline") {
+      renderPipelineView();
     } else if (viewId === "view-queue") {
       loadCasesQueue();
     } else if (viewId === "view-analytics") {
       renderFunnel();
       loadTrends();
-    } else if (viewId === "view-dendrogram") {
-      if (state.selectedCase) {
-        inspectCase(state.selectedCase.case_id, false);
-      } else if (state.cases && state.cases.length > 0) {
-        inspectCase(state.cases[0].case_id, false);
-      }
-    } else if (viewId === "view-constellation") {
-      autoFitCamera();
     }
   }
 
   // =========================================================================
-  // RIGHT SLIDE-OUT DEEP INSPECTION DRAWER (00:18 - 00:20)
+  // VIEW 1: RECOVERY PIPELINE OVERVIEW
   // =========================================================================
 
-  async function inspectCase(caseId, openDrawer = true) {
-    const drawer = document.getElementById("caseDetailModal");
-    if (openDrawer && drawer) drawer.classList.add("open");
+  function renderPipelineView() {
+    if (!state.overview) return;
+    const data = state.overview;
+    const funnel = data.funnel || {};
 
-    try {
-      const [detail, timelineData] = await Promise.all([
-        fetchAPI(`/api/v1/recovery/cases/${encodeURIComponent(caseId)}`),
-        fetchAPI(`/api/v1/recovery/cases/${encodeURIComponent(caseId)}/timeline`),
-      ]);
+    // Update pipeline stage counts
+    const elRisk = document.getElementById("pipeAtRisk");
+    if (elRisk) elRisk.textContent = funnel.cases_at_risk || data.total_cases || 0;
 
-      const c = detail.case;
-      state.selectedCase = c;
+    const elDecided = document.getElementById("pipeDecided");
+    if (elDecided) elDecided.textContent = funnel.decisions_evaluated || data.decisions_made || 0;
 
-      // Update Header
-      document.getElementById("modalCaseTitle").textContent = `Case ${c.case_id}`;
-      document.getElementById("modalCaseSubtitle").textContent = `Customer: ${maskCustomerId(c.customer_id)} • Created: ${formatTimestamp(c.created_at)}`;
-      document.getElementById("dtCategoryTag").textContent = c.is_subscription ? "SUBSCRIPTION BILLING CYCLE" : "ONE-OFF CHECKOUT";
+    const elActioned = document.getElementById("pipeActioned");
+    if (elActioned) elActioned.textContent = funnel.interventions_dispatched || data.actions_attempted || 0;
 
-      // Linked SaaS Subscription Details
-      const subBox = document.getElementById("dtSubscriptionDetailsBox");
-      if (subBox) {
-        if (c.is_subscription || c.subscription_id) {
-          subBox.style.display = "block";
-          document.getElementById("dtSubId").textContent = c.subscription_id || "sub_active";
-          document.getElementById("dtBillingCycleId").textContent = c.billing_cycle_id || "-";
-        } else {
-          subBox.style.display = "none";
-        }
-      }
+    const elSettled = document.getElementById("pipeSettled");
+    if (elSettled) elSettled.textContent = funnel.successful_executions || data.actions_executed || 0;
 
-      // Radial Recovery Probability Gauge (00:18)
-      const prob = detail.decision_forecast ? detail.decision_forecast.recovery_probability : 0.76;
-      const probPct = Math.round(prob * 100);
-      document.getElementById("dtGaugeScore").textContent = `${probPct}%`;
+    const elRecovered = document.getElementById("pipeRecovered");
+    if (elRecovered) elRecovered.textContent = funnel.recovered_outcomes || data.recovered_cases || 0;
 
-      const circle = document.getElementById("dtRadialCircleFill");
-      if (circle) {
-        const circumference = 2 * Math.PI * 28; // ~175.9
-        const offset = circumference - (prob * circumference);
-        circle.style.strokeDasharray = `${circumference}`;
-        circle.style.strokeDashoffset = `${offset}`;
-      }
+    // Update financial summary
+    const elRiskAmt = document.getElementById("pipeRevenueAtRisk");
+    if (elRiskAmt) elRiskAmt.textContent = formatPaiseINR(data.total_amount_at_risk_paise);
 
-      // Update 2x2 Metric Cards
-      document.getElementById("dtAmount").textContent = formatPaiseINR(c.amount_paise);
-      document.getElementById("dtDecCost").textContent = formatPaiseINR(detail.decision_forecast?.action_cost_paise || 2200);
-      document.getElementById("dtDecNet").textContent = formatPaiseINR(detail.decision_forecast?.expected_net_recovery_paise || Math.floor(c.amount_paise * 0.76 - 2200));
-      
-      const outStatusEl = document.getElementById("dtOutStatus");
-      if (outStatusEl) {
-        outStatusEl.textContent = c.current_state;
-        outStatusEl.className = `drawer-metric-val ${c.current_state === 'RECOVERED' ? 'text-emerald' : (c.current_state === 'DECIDED' ? 'text-cyan' : 'text-amber')}`;
-      }
+    const elNet = document.getElementById("pipeNetRecovered");
+    if (elNet) elNet.textContent = formatPaiseINR(data.recoverai_net_recovered_paise);
 
-      // AI Policy Rationale
-      if (detail.decision_forecast) {
-        document.getElementById("dtDecAction").textContent = detail.decision_forecast.recommended_action.toUpperCase();
-        document.getElementById("dtDecExplanation").textContent = formatDescriptionRupees(detail.decision_forecast.explanation);
-      }
+    const elRate = document.getElementById("pipeRecoveryRate");
+    if (elRate) elRate.textContent = formatPercent(data.recovery_rate);
 
-      // Candidate Matrix in Drawer
-      renderCandidateMatrixTable(detail.decision_forecast, c);
+    const elCosts = document.getElementById("pipeActionCosts");
+    if (elCosts) elCosts.textContent = formatPaiseINR(data.total_action_cost_paise);
 
-      // Audit Timeline
-      renderTimeline(timelineData.events);
-
-      // Also refresh Dendrogram view if open
-      renderDendrogramView(c, detail);
-
-    } catch (err) {
-      console.warn("Error opening case detail:", err);
-    }
+    // Render recent activity feed from cases
+    renderActivityFeed();
   }
 
-  function renderCandidateMatrixTable(decision, caseItem) {
-    const tbody = document.getElementById("dtCandidateTableBody");
-    if (!tbody) return;
+  function renderActivityFeed() {
+    const feed = document.getElementById("pipelineActivityFeed");
+    if (!feed || !state.cases || state.cases.length === 0) return;
 
-    const actions = [
-      { name: "no_action", prob: 0.05, cost: 0 },
-      { name: "retry", prob: 0.42, cost: 1500 },
-      { name: "payment_link", prob: 0.76, cost: 2200 },
-      { name: "reminder", prob: 0.38, cost: 800 },
-      { name: "escalate", prob: 0.55, cost: 5000 },
-    ];
+    // Sort cases by created_at descending, take top 8
+    const recentCases = [...state.cases]
+      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))
+      .slice(0, 8);
 
     let html = "";
-    actions.forEach((act) => {
-      const isSelected = decision ? (act.name === decision.recommended_action) : (act.name === caseItem.recommended_action);
-      const gross = Math.floor(act.prob * caseItem.amount_paise);
-      const net = gross - act.cost;
+    recentCases.forEach((c) => {
+      const stateColor = c.current_state === "RECOVERED" ? "#34d399"
+        : c.current_state === "DECIDED" ? "#38bdf8"
+        : c.current_state === "ACTION_EXECUTED" ? "#a78bfa"
+        : c.current_state === "EXECUTION_FAILED" ? "#fb7185"
+        : c.current_state === "NOT_RECOVERED" ? "#fb7185"
+        : "#fbbf24";
+      const stateLabel = c.current_state === "RECOVERED" ? "Recovered"
+        : c.current_state === "DECIDED" ? "Decision Made"
+        : c.current_state === "ACTION_EXECUTED" ? "Action Executed"
+        : c.current_state === "EXECUTION_FAILED" ? "Execution Failed"
+        : c.current_state === "NOT_RECOVERED" ? "Not Recovered"
+        : "Pending";
+      const amountColor = c.current_state === "RECOVERED" ? "text-emerald" : "text-amber";
 
       html += `
-        <tr class="${isSelected ? 'selected' : ''}">
-          <td class="mono font-bold">${act.name.toUpperCase()}</td>
-          <td class="mono">${formatPercent(act.prob)}</td>
-          <td class="mono text-rose">${formatPaiseINR(act.cost)}</td>
-          <td class="mono font-bold ${net > 0 ? 'text-emerald' : 'text-dim'}">${formatPaiseINR(net)}</td>
-        </tr>
-      `;
-    });
-    tbody.innerHTML = html;
-  }
-
-  function renderTimeline(events) {
-    const container = document.getElementById("timelineContainer");
-    if (!container) return;
-
-    if (!events || events.length === 0) {
-      container.innerHTML = `<div class="text-dim text-xs mono">No timeline events recorded.</div>`;
-      return;
-    }
-
-    let html = "";
-    events.forEach((evt) => {
-      html += `
-        <div style="background:rgba(14,25,36,0.7);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:0.55rem 0.75rem;">
-          <div class="flex-between">
-            <span class="mono font-bold text-xs text-bright">${escapeHTML(evt.title)}</span>
-            <span class="mono text-dim text-xs">${formatTimestamp(evt.timestamp)}</span>
+        <div class="activity-event" onclick="window.inspectCase('${escapeHTML(c.case_id)}')">
+          <div class="activity-dot" style="background:${stateColor};box-shadow:0 0 8px ${stateColor};"></div>
+          <div class="activity-info">
+            <div>
+              <div class="activity-title">${stateLabel} — ${escapeHTML(c.recommended_action)}</div>
+              <div class="activity-meta">${escapeHTML(c.case_id)} • ${maskCustomerId(c.customer_id)} • ${c.is_subscription ? 'Subscription' : 'One-Off'}</div>
+            </div>
+            <div class="activity-amount ${amountColor}">${formatPaiseINR(c.amount_paise)}</div>
           </div>
-          <div class="text-xs text-muted" style="margin-top:0.2rem;">${escapeHTML(formatDescriptionRupees(evt.description))}</div>
         </div>
       `;
     });
-    container.innerHTML = html;
+    feed.innerHTML = html;
   }
 
   // =========================================================================
-  // VIEW 3: SUBSCRIPTIONS PANEL & SINGLE-SYNC MODAL
-  // =========================================================================
-
-  async function loadSubscriptions() {
-    const tbody = document.getElementById("subscriptionsTableBody");
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-dim mono" style="padding:2.5rem;">[QUERYING ACTIVE SUBSCRIPTION REGISTRY...]</td></tr>`;
-
-    try {
-      const subs = await fetchAPI("/api/v1/recovery/subscriptions");
-      state.subscriptions = subs;
-      document.getElementById("subBadgeCount").textContent = subs.length;
-
-      if (!subs || subs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-dim mono" style="padding:2.5rem;">No active recurring subscriptions found.</td></tr>`;
-        return;
-      }
-
-      let rows = "";
-      subs.forEach((s) => {
-        const statusColorClass = s.status === "active" ? "text-emerald" : (s.status === "halted" ? "text-rose" : "text-amber");
-        const recoverableText = s.is_recoverable ? `<span class="text-emerald font-bold mono">YES</span>` : `<span class="text-rose font-bold mono">NO</span>`;
-
-        rows += `
-          <tr>
-            <td class="mono font-bold text-bright">${escapeHTML(s.subscription_id)}</td>
-            <td class="mono text-dim">${escapeHTML(maskCustomerId(s.customer_id))}</td>
-            <td><span class="mono text-xs font-bold ${statusColorClass}">${escapeHTML(s.status.toUpperCase())}</span></td>
-            <td class="mono text-center">${s.current_cycle}${s.total_cycles ? "/" + s.total_cycles : ""}</td>
-            <td class="mono font-bold text-bright">${formatPaiseINR(s.amount_due_paise)}</td>
-            <td class="mono text-center">${s.charge_attempt_count}</td>
-            <td class="text-xs">${recoverableText}</td>
-            <td class="text-xs text-dim mono">${formatTimestamp(s.updated_at)}</td>
-            <td>
-              <button class="btn-pill btn-primary-pill" style="padding:0.25rem 0.65rem;font-size:0.75rem;" onclick="window.openSyncModal('${escapeHTML(s.subscription_id)}')">
-                Reconcile
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = rows;
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-rose mono" style="padding:2.5rem;">Error loading subscriptions: ${escapeHTML(err.message)}</td></tr>`;
-    }
-  }
-
-  function openSyncModal(subscriptionId) {
-    state.pendingSyncSubId = subscriptionId;
-    document.getElementById("syncTargetSubscriptionId").textContent = subscriptionId;
-    const modal = document.getElementById("syncModal");
-    if (modal) modal.style.display = "flex";
-  }
-
-  function closeSyncModal() {
-    state.pendingSyncSubId = null;
-    const modal = document.getElementById("syncModal");
-    if (modal) modal.style.display = "none";
-  }
-
-  async function executeSingleSubscriptionSync() {
-    const subId = state.pendingSyncSubId;
-    if (!subId) return;
-
-    const confirmBtn = document.getElementById("confirmSyncBtn");
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = "Reconciling...";
-
-    try {
-      const resp = await fetchAPI("/api/v1/recovery/subscriptions/sync", {
-        method: "POST",
-        body: JSON.stringify({ subscription_id: subId }),
-      });
-      closeSyncModal();
-      loadSubscriptions();
-      loadAllData();
-      alert(`Subscription ${subId} successfully reconciled. Status: ${resp.status}`);
-    } catch (err) {
-      alert(`Subscription sync failed: ${err.message}`);
-    } finally {
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Reconcile Subscription";
-    }
-  }
-
-  // =========================================================================
-  // VIEW 4: DATA QUEUE & VIEW 5: ANALYTICS LOADERS
+  // VIEW 2: HIGH-DENSITY RECOVERY QUEUE
   // =========================================================================
 
   async function loadCasesQueue() {
@@ -943,14 +250,24 @@
     try {
       const data = await fetchAPI(`/api/v1/recovery/cases?${params.toString()}`);
       state.queue.totalCount = data.total_count;
-      document.getElementById("queueBadgeCount").textContent = data.total_count;
+      
+      const badge = document.getElementById("queueBadgeCount");
+      if (badge) badge.textContent = data.total_count;
 
       const totalPages = Math.ceil(data.total_count / state.queue.limit) || 1;
       const currentPage = state.queue.page + 1;
-      document.getElementById("paginationInfo").textContent = `Showing ${data.items.length} of ${data.total_count} cases`;
-      document.getElementById("pageIndicator").textContent = `Page ${currentPage} of ${totalPages}`;
-      document.getElementById("prevPageBtn").disabled = state.queue.page <= 0;
-      document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
+      
+      const infoEl = document.getElementById("paginationInfo");
+      if (infoEl) infoEl.textContent = `Showing ${data.items.length} of ${data.total_count} cases`;
+      
+      const pageEl = document.getElementById("pageIndicator");
+      if (pageEl) pageEl.textContent = `Page ${currentPage} of ${totalPages}`;
+      
+      const prevBtn = document.getElementById("prevPageBtn");
+      if (prevBtn) prevBtn.disabled = state.queue.page <= 0;
+      
+      const nextBtn = document.getElementById("nextPageBtn");
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 
       if (!data.items || data.items.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10" class="text-center text-dim mono" style="padding:2.5rem;">No cases match active filter criteria.</td></tr>`;
@@ -984,6 +301,10 @@
       tbody.innerHTML = `<tr><td colspan="10" class="text-center text-rose mono" style="padding:2.5rem;">Error loading queue: ${escapeHTML(err.message)}</td></tr>`;
     }
   }
+
+  // =========================================================================
+  // VIEW 3: ANALYTICS & RECOVERY FUNNEL
+  // =========================================================================
 
   function renderFunnel() {
     const container = document.getElementById("funnelContainer");
@@ -1034,19 +355,22 @@
     try {
       const trends = await fetchAPI(`/api/v1/analytics/trends?interval=${interval}`);
       if (!trends || trends.length === 0) {
-        container.innerHTML = `<div class="text-dim text-xs mono text-center" style="padding:2rem;">No trend data available</div>`;
+        container.innerHTML = `<div class="text-dim text-xs mono text-center" style="padding:3rem;">No trend data available</div>`;
         return;
       }
 
       const maxGross = Math.max(...trends.map((t) => t.gross_recovered_paise), 1);
-      let chartHtml = `<div style="display:flex;gap:0.85rem;align-items:flex-end;height:150px;padding:0.75rem 0;overflow-x:auto;">`;
+      let chartHtml = `<div class="razor-bar-chart">`;
       trends.forEach((t) => {
-        const heightPct = Math.max(8, Math.round((t.gross_recovered_paise / maxGross) * 100));
+        const heightPx = Math.max(12, Math.round((t.gross_recovered_paise / maxGross) * 125));
         chartHtml += `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;min-width:50px;">
-            <span class="mono text-xs text-emerald font-bold">${formatPaiseINR(t.gross_recovered_paise)}</span>
-            <div style="width:28px;height:${heightPct}px;background:linear-gradient(180deg,#0284c7,#06b6d4);border-radius:var(--radius-sm);" title="${t.time_bucket}: ${formatPaiseINR(t.gross_recovered_paise)}"></div>
-            <span class="mono text-xs text-dim">${escapeHTML(t.time_bucket.slice(5))}</span>
+          <div class="razor-bar-col">
+            <div class="razor-bar-val text-emerald mono">${formatPaiseINR(t.gross_recovered_paise)}</div>
+            <div class="razor-bar-track">
+              <div class="razor-bar-fill" style="height:${heightPx}px;" title="Gross: ${formatPaiseINR(t.gross_recovered_paise)} | Net: ${formatPaiseINR(t.net_recovered_paise)}"></div>
+            </div>
+            <div class="razor-bar-date mono">${escapeHTML(t.time_bucket.slice(5))}</div>
+            <div class="razor-bar-subinfo">Cost: ${formatPaiseINR(t.action_cost_paise)}</div>
           </div>
         `;
       });
@@ -1056,33 +380,208 @@
   }
 
   // =========================================================================
+  // RIGHT SLIDE-OUT DEEP INSPECTION DRAWER
+  // =========================================================================
+
+  async function inspectCase(caseId, openDrawer = true) {
+    const drawer = document.getElementById("caseDetailModal");
+    if (openDrawer && drawer) drawer.classList.add("open");
+
+    try {
+      const [detail, timelineData] = await Promise.all([
+        fetchAPI(`/api/v1/recovery/cases/${encodeURIComponent(caseId)}`),
+        fetchAPI(`/api/v1/recovery/cases/${encodeURIComponent(caseId)}/timeline`),
+      ]);
+
+      const c = detail.case;
+      state.selectedCase = c;
+
+      // Extract candidate actions from API response
+      if (detail.decision_forecast && detail.decision_forecast.candidate_actions) {
+        state.selectedCaseCandidates = detail.decision_forecast.candidate_actions.map(ca => ({
+          name: ca.action || ca.recommended_action,
+          prob: ca.recovery_probability,
+          cost: ca.action_cost_paise,
+          allowed: ca.allowed,
+          disqualification_reason: ca.disqualification_reason,
+        }));
+      } else {
+        state.selectedCaseCandidates = null;
+      }
+
+      // Update Header
+      document.getElementById("modalCaseTitle").textContent = `Case ${c.case_id}`;
+      document.getElementById("modalCaseSubtitle").textContent = `Customer: ${maskCustomerId(c.customer_id)} • Created: ${formatTimestamp(c.created_at)}`;
+      document.getElementById("dtCategoryTag").textContent = c.is_subscription ? "SUBSCRIPTION BILLING CYCLE" : "ONE-OFF CHECKOUT";
+
+      // Linked SaaS Subscription Details
+      const subBox = document.getElementById("dtSubscriptionDetailsBox");
+      if (subBox) {
+        if (c.is_subscription || c.subscription_id) {
+          subBox.style.display = "block";
+          document.getElementById("dtSubId").textContent = c.subscription_id || "sub_active";
+          document.getElementById("dtBillingCycleId").textContent = c.billing_cycle_id || "-";
+        } else {
+          subBox.style.display = "none";
+        }
+      }
+
+      // Radial Recovery Probability Gauge
+      const prob = detail.decision_forecast ? detail.decision_forecast.recovery_probability : 0;
+      const probPct = Math.round(prob * 100);
+      document.getElementById("dtGaugeScore").textContent = `${probPct}%`;
+
+      const circle = document.getElementById("dtRadialCircleFill");
+      if (circle) {
+        const circumference = 2 * Math.PI * 28; // ~175.9
+        const offset = circumference - (prob * circumference);
+        circle.style.strokeDasharray = `${circumference}`;
+        circle.style.strokeDashoffset = `${offset}`;
+      }
+
+      // Update 2x2 Metric Cards
+      document.getElementById("dtAmount").textContent = formatPaiseINR(c.amount_paise);
+      document.getElementById("dtDecCost").textContent = formatPaiseINR(detail.decision_forecast?.action_cost_paise || 0);
+      document.getElementById("dtDecNet").textContent = formatPaiseINR(detail.decision_forecast?.expected_net_recovery_paise || 0);
+      
+      const outStatusEl = document.getElementById("dtOutStatus");
+      if (outStatusEl) {
+        outStatusEl.textContent = c.current_state;
+        outStatusEl.className = `drawer-metric-val ${c.current_state === 'RECOVERED' ? 'text-emerald' : (c.current_state === 'DECIDED' ? 'text-cyan' : 'text-amber')}`;
+      }
+
+      // Show attribution source if available
+      const attrEl = document.getElementById("dtAttribution");
+      if (attrEl) {
+        const source = c.resolution_source || (c.current_state === 'RECOVERED' ? 'recoverai_intervention' : '—');
+        const sourceLabel = source === 'recoverai_intervention' ? 'RecoverAI Intervention'
+          : source === 'provider_auto_retry' ? 'Provider Auto-Retry'
+          : source;
+        attrEl.textContent = sourceLabel;
+        attrEl.className = `drawer-metric-val ${source === 'recoverai_intervention' ? 'text-emerald' : (source === 'provider_auto_retry' ? 'text-violet' : 'text-dim')}`;
+      }
+
+      // Show settlement evidence if outcome exists
+      const evidenceEl = document.getElementById("dtSettlementEvidence");
+      if (evidenceEl) {
+        if (detail.outcome_settlement) {
+          const out = detail.outcome_settlement;
+          evidenceEl.textContent = out.provider_reference || '—';
+          evidenceEl.style.display = 'block';
+        } else {
+          evidenceEl.style.display = 'none';
+        }
+      }
+
+      // AI Policy Rationale
+      if (detail.decision_forecast) {
+        document.getElementById("dtDecAction").textContent = detail.decision_forecast.recommended_action.toUpperCase();
+        document.getElementById("dtDecExplanation").textContent = formatDescriptionRupees(detail.decision_forecast.explanation);
+      }
+
+      // Candidate Matrix in Drawer
+      renderCandidateMatrixTable(detail.decision_forecast, c);
+
+      // Audit Timeline
+      renderTimeline(timelineData.events);
+
+    } catch (err) {
+      console.warn("Error opening case detail:", err);
+    }
+  }
+
+  function renderCandidateMatrixTable(decision, caseItem) {
+    const tbody = document.getElementById("dtCandidateTableBody");
+    if (!tbody) return;
+
+    const actions = state.selectedCaseCandidates || [
+      { name: decision?.recommended_action || caseItem.recommended_action, prob: decision?.recovery_probability || 0, cost: decision?.action_cost_paise || 0 },
+    ];
+
+    let html = "";
+    actions.forEach((act) => {
+      const isSelected = decision ? (act.name === decision.recommended_action) : (act.name === caseItem.recommended_action);
+      const gross = Math.floor(act.prob * caseItem.amount_paise);
+      const net = gross - act.cost;
+
+      html += `
+        <tr class="${isSelected ? 'selected' : ''}">
+          <td class="mono font-bold">${act.name.toUpperCase()}</td>
+          <td class="mono">${formatPercent(act.prob)}</td>
+          <td class="mono text-rose">${formatPaiseINR(act.cost)}</td>
+          <td class="mono font-bold ${net > 0 ? 'text-emerald' : 'text-dim'}">${formatPaiseINR(net)}</td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
+
+  function renderTimeline(events) {
+    const container = document.getElementById("timelineContainer");
+    if (!container) return;
+
+    if (!events || events.length === 0) {
+      container.innerHTML = `<div class="text-dim text-xs mono">No timeline events recorded.</div>`;
+      return;
+    }
+
+    let html = "";
+    events.forEach((evt) => {
+      html += `
+        <div style="background:rgba(14,25,38,0.7);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:0.55rem 0.75rem;">
+          <div class="flex-between">
+            <span class="mono font-bold text-xs text-bright">${escapeHTML(evt.title)}</span>
+            <span class="mono text-dim text-xs">${formatTimestamp(evt.timestamp)}</span>
+          </div>
+          <div class="text-xs text-muted" style="margin-top:0.2rem;">${escapeHTML(formatDescriptionRupees(evt.description))}</div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  // =========================================================================
   // DATA SYNC & BOOTSTRAP
   // =========================================================================
 
   async function loadAllData() {
     try {
-      const [overviewData, casesData, subsData] = await Promise.all([
+      const [overviewData, casesData] = await Promise.all([
         fetchAPI("/api/v1/dashboard/overview"),
         fetchAPI("/api/v1/recovery/cases?limit=50"),
-        fetchAPI("/api/v1/recovery/subscriptions"),
       ]);
 
       state.overview = overviewData;
       state.cases = casesData.items || [];
-      state.subscriptions = subsData || [];
 
-      // Update Toolbar Badges & Bottom Telemetry Chips
-      document.getElementById("subBadgeCount").textContent = subsData.length || 0;
-      document.getElementById("queueBadgeCount").textContent = overviewData.total_cases || 0;
+      // Update Toolbar Badges & Top Executive KPI Strip
+      const queueBadge = document.getElementById("queueBadgeCount");
+      if (queueBadge) queueBadge.textContent = overviewData.total_cases || 0;
 
-      document.getElementById("kpiRecoveryRate").textContent = formatPercent(overviewData.recovery_rate);
-      document.getElementById("kpiRevenueAtRisk").textContent = formatPaiseINR(overviewData.total_amount_at_risk_paise);
-      document.getElementById("kpiNetRecovered").textContent = formatPaiseINR(overviewData.recoverai_net_recovered_paise);
-      document.getElementById("kpiProviderGross").textContent = formatPaiseINR(overviewData.provider_gross_recovered_paise);
-      document.getElementById("kpiActiveCases").textContent = overviewData.pending_cases;
+      const kpiRate = document.getElementById("kpiRecoveryRate");
+      if (kpiRate) kpiRate.textContent = formatPercent(overviewData.recovery_rate);
 
-      // Build & Render Cosmos Graph
-      buildGraphNetwork();
+      const kpiRisk = document.getElementById("kpiRevenueAtRisk");
+      if (kpiRisk) kpiRisk.textContent = formatPaiseINR(overviewData.total_amount_at_risk_paise);
+
+      const kpiNet = document.getElementById("kpiNetRecovered");
+      if (kpiNet) kpiNet.textContent = formatPaiseINR(overviewData.recoverai_net_recovered_paise);
+
+      const kpiProv = document.getElementById("kpiProviderGross");
+      if (kpiProv) kpiProv.textContent = formatPaiseINR(overviewData.provider_gross_recovered_paise);
+
+      const kpiActive = document.getElementById("kpiActiveCases");
+      if (kpiActive) kpiActive.textContent = overviewData.pending_cases;
+
+      // Refresh active view
+      if (state.activeView === "view-pipeline") {
+        renderPipelineView();
+      } else if (state.activeView === "view-queue") {
+        loadCasesQueue();
+      } else if (state.activeView === "view-analytics") {
+        renderFunnel();
+        loadTrends();
+      }
 
     } catch (err) {
       console.warn("Failed loading live telemetry:", err);
@@ -1090,102 +589,53 @@
   }
 
   window.inspectCase = inspectCase;
-  window.openSyncModal = openSyncModal;
+  window.switchView = switchView;
 
   function init() {
-    initCanvas();
-
-    // 1. Toolbar View Switchers
-    document.querySelectorAll(".tool-btn[data-view]").forEach((btn) => {
+    // 1. Navigation Tab View Switchers
+    document.querySelectorAll(".nav-tab-btn[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.getAttribute("data-view");
         switchView(v);
       });
     });
 
-    // 2. Camera Controls
-    document.getElementById("btnZoomIn")?.addEventListener("click", () => {
-      state.camera.targetScale = Math.min(2.5, state.camera.targetScale * 1.25);
-    });
-    document.getElementById("btnZoomOut")?.addEventListener("click", () => {
-      state.camera.targetScale = Math.max(0.4, state.camera.targetScale * 0.8);
-    });
-    document.getElementById("btnResetCamera")?.addEventListener("click", autoFitCamera);
-
-    // 3. Left Timeline Rail Buttons
-    document.querySelectorAll(".timeline-step-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".timeline-step-btn").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.activeTimePeriod = btn.getAttribute("data-period");
-        loadAllData();
-      });
-    });
-
-    // 4. Bottom-Left Legend Filter Buttons
-    document.querySelectorAll(".legend-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        const cluster = item.getAttribute("data-filter-cluster");
-        if (state.activeFilterCluster === cluster) {
-          state.activeFilterCluster = null;
-          item.style.opacity = "1";
-        } else {
-          state.activeFilterCluster = cluster;
-          document.querySelectorAll(".legend-item").forEach((li) => li.style.opacity = "0.5");
-          item.style.opacity = "1";
-        }
-      });
-    });
-
-    // 5. Dendrogram Branch Selector Cards
-    document.querySelectorAll(".branch-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        document.querySelectorAll(".branch-card").forEach((c) => c.classList.remove("active"));
-        card.classList.add("active");
-        state.selectedBranch = card.getAttribute("data-branch");
-        if (state.selectedCase) {
-          inspectCase(state.selectedCase.case_id, false);
-        }
-      });
-    });
-
-    // 6. Drawer Close
+    // 2. Drawer Close
     document.getElementById("modalCloseBtn")?.addEventListener("click", () => {
       document.getElementById("caseDetailModal")?.classList.remove("open");
     });
 
-    // 7. Single Subscription Sync Modal Handlers
-    document.getElementById("syncModalCloseBtn")?.addEventListener("click", closeSyncModal);
-    document.getElementById("cancelSyncBtn")?.addEventListener("click", closeSyncModal);
-    document.getElementById("confirmSyncBtn")?.addEventListener("click", executeSingleSubscriptionSync);
-
-    // 8. AI Copilot Drawer Toggle
-    document.getElementById("btnToggleAIInsights")?.addEventListener("click", () => {
-      document.getElementById("aiInsightsDrawer")?.classList.toggle("open");
-    });
-    document.getElementById("btnCloseAIInsights")?.addEventListener("click", () => {
-      document.getElementById("aiInsightsDrawer")?.classList.remove("open");
-    });
-
-    // 9. AI Query Search Input
+    // 3. Header Search Input Filter
     document.getElementById("aiQueryInput")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         const query = e.target.value.trim().toLowerCase();
-        if (query.includes("subscription") || query.includes("recurring") || query.includes("retry")) {
-          switchView("view-subscriptions");
+        if (query.includes("analytic") || query.includes("funnel") || query.includes("yield")) {
+          switchView("view-analytics");
+        } else if (query.includes("pipeline")) {
+          switchView("view-pipeline");
         } else if (query) {
           state.queue.search = query;
+          const sInput = document.getElementById("searchInput");
+          if (sInput) sInput.value = query;
           switchView("view-queue");
+          loadCasesQueue();
         }
       }
     });
 
-    // 10. Manual Sync Trigger Button
+    // 4. Manual Sync Trigger Button
     document.getElementById("btnTriggerSimulation")?.addEventListener("click", () => {
       loadAllData();
+      if (state.activeView === "view-queue") loadCasesQueue();
+      if (state.activeView === "view-analytics") { renderFunnel(); loadTrends(); }
     });
 
-    // 11. Queue Filters & Pagination
+    // 5. Trend Interval Change Handler
+    document.getElementById("trendIntervalSelect")?.addEventListener("change", () => {
+      loadTrends();
+    });
+
+    // 6. Queue Filters & Pagination
     document.getElementById("applyFiltersBtn")?.addEventListener("click", () => {
       state.queue.search = document.getElementById("searchInput")?.value.trim() || "";
       state.queue.state = document.getElementById("filterState")?.value || "";
@@ -1225,6 +675,9 @@
 
     // Initial Load & Auto-Refresh
     loadAllData();
+    loadCasesQueue();
+    renderFunnel();
+    loadTrends();
     setInterval(loadAllData, state.autoRefreshInterval);
   }
 
@@ -1234,3 +687,4 @@
     init();
   }
 })();
+
