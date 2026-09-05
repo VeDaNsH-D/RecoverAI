@@ -81,14 +81,27 @@ def _handle_subscription_webhook(
         return {"status": "unmatched", "event_id": event_id, "event": event_type, "reason": "missing_subscription_id"}
 
     # 1. Normalize Subscription Status
-    raw_status = sub_data.get("status", "pending").lower()
+    raw_status = sub_data.get("status", "").lower()
     sub_status = None
     for s in RazorpaySubscriptionStatus:
         if s.value == raw_status:
             sub_status = s
             break
     if sub_status is None:
-        sub_status = RazorpaySubscriptionStatus.PENDING
+        if event_type == "subscription.pending":
+            sub_status = RazorpaySubscriptionStatus.PENDING
+        elif event_type == "subscription.halted":
+            sub_status = RazorpaySubscriptionStatus.HALTED
+        elif event_type == "subscription.charged":
+            sub_status = RazorpaySubscriptionStatus.ACTIVE
+        elif event_type == "subscription.cancelled":
+            sub_status = RazorpaySubscriptionStatus.CANCELLED
+        elif event_type == "subscription.completed":
+            sub_status = RazorpaySubscriptionStatus.COMPLETED
+        elif event_type in ("subscription.activated", "subscription.authenticated"):
+            sub_status = RazorpaySubscriptionStatus.ACTIVE
+        else:
+            sub_status = RazorpaySubscriptionStatus.UNKNOWN
 
     customer_id = sub_data.get("customer_id") or payment_data.get("customer_id") or f"cust_{subscription_id[:8]}"
     plan_id = sub_data.get("plan_id")
@@ -118,6 +131,11 @@ def _handle_subscription_webhook(
     case_id = derive_billing_cycle_case_id(subscription_id, invoice_id, current_cycle, payment_id)
 
     # 2. Persist / Update Subscription Record
+    is_rec = sub_status not in (
+        RazorpaySubscriptionStatus.CANCELLED,
+        RazorpaySubscriptionStatus.COMPLETED,
+        RazorpaySubscriptionStatus.UNKNOWN,
+    )
     sub_record = SubscriptionRecord(
         subscription_id=subscription_id,
         customer_id=customer_id,
@@ -129,6 +147,7 @@ def _handle_subscription_webhook(
         currency=currency,
         charge_attempt_count=charge_attempt_count,
         last_case_id=case_id,
+        is_recoverable=is_rec,
         created_at=now_iso,
         updated_at=now_iso,
     )

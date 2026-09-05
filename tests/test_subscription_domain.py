@@ -185,3 +185,21 @@ def test_stopping_rules_permitted_intervention():
     )
     assert res.should_stop is False
     assert res.reason is None
+
+
+def test_stopping_rules_unknown_subscription():
+    """Stopping rule fails closed if subscription status is UNKNOWN."""
+    sub = SubscriptionRecord(
+        subscription_id="sub_unk_001",
+        customer_id="cust_001",
+        status=RazorpaySubscriptionStatus.UNKNOWN,
+        is_recoverable=False,
+    )
+    res = evaluate_subscription_stopping_rules(
+        subscription=sub,
+        case=None,
+        action=RecoveryAction.PAYMENT_LINK,
+    )
+    assert res.should_stop is True
+    assert "unknown" in str(res.reason).lower()
+    assert sub.is_terminal is True

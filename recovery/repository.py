@@ -781,11 +781,17 @@ class RecoveryRepository:
         if not row:
             return None
 
+        raw_status = row["status"]
+        try:
+            sub_status = RazorpaySubscriptionStatus(raw_status)
+        except (ValueError, KeyError):
+            sub_status = RazorpaySubscriptionStatus.UNKNOWN
+
         return SubscriptionRecord(
             subscription_id=row["subscription_id"],
             customer_id=row["customer_id"],
             plan_id=row["plan_id"],
-            status=RazorpaySubscriptionStatus(row["status"]),
+            status=sub_status,
             current_cycle=row["current_cycle"],
             total_cycles=row["total_cycles"],
             amount_due_paise=row["amount_due_paise"],
@@ -837,6 +843,7 @@ class RecoveryRepository:
     def list_subscriptions(
         self,
         status: Optional[str] = None,
+        status_filter: Optional[str] = None,
         customer_id: Optional[str] = None,
         limit: int = 50,
     ) -> List[SubscriptionRecord]:
@@ -844,9 +851,10 @@ class RecoveryRepository:
         conn = self._get_connection()
         query = "SELECT * FROM subscriptions WHERE 1=1"
         params: List[Any] = []
-        if status:
+        effective_status = status or status_filter
+        if effective_status:
             query += " AND status = ?"
-            params.append(status)
+            params.append(effective_status.lower())
         if customer_id:
             query += " AND customer_id = ?"
             params.append(customer_id)
@@ -855,27 +863,35 @@ class RecoveryRepository:
 
         cur = conn.execute(query, tuple(params))
         rows = cur.fetchall()
-        return [
-            SubscriptionRecord(
-                subscription_id=r["subscription_id"],
-                customer_id=r["customer_id"],
-                plan_id=r["plan_id"],
-                status=RazorpaySubscriptionStatus(r["status"]),
-                current_cycle=r["current_cycle"],
-                total_cycles=r["total_cycles"],
-                amount_due_paise=r["amount_due_paise"],
-                currency=r["currency"],
-                charge_attempt_count=r["charge_attempt_count"],
-                next_charge_at=r["next_charge_at"],
-                last_case_id=r["last_case_id"],
-                source=r["source"],
-                is_recoverable=bool(r["is_recoverable"]),
-                metadata=json.loads(r["metadata_json"]) if r["metadata_json"] else {},
-                created_at=r["created_at"],
-                updated_at=r["updated_at"],
+        results = []
+        for r in rows:
+            raw_status = r["status"]
+            try:
+                sub_status = RazorpaySubscriptionStatus(raw_status)
+            except (ValueError, KeyError):
+                sub_status = RazorpaySubscriptionStatus.UNKNOWN
+
+            results.append(
+                SubscriptionRecord(
+                    subscription_id=r["subscription_id"],
+                    customer_id=r["customer_id"],
+                    plan_id=r["plan_id"],
+                    status=sub_status,
+                    current_cycle=r["current_cycle"],
+                    total_cycles=r["total_cycles"],
+                    amount_due_paise=r["amount_due_paise"],
+                    currency=r["currency"],
+                    charge_attempt_count=r["charge_attempt_count"],
+                    next_charge_at=r["next_charge_at"],
+                    last_case_id=r["last_case_id"],
+                    source=r["source"],
+                    is_recoverable=bool(r["is_recoverable"]),
+                    metadata=json.loads(r["metadata_json"]) if r["metadata_json"] else {},
+                    created_at=r["created_at"],
+                    updated_at=r["updated_at"],
+                )
             )
-            for r in rows
-        ]
+        return results
 
     def update_subscription_status(
         self,
@@ -1156,170 +1172,6 @@ class RecoveryRepository:
             (agent_run_id,),
         )
         return [dict(row) for row in cur.fetchall()]
-
-    def save_subscription(self, record: SubscriptionRecord) -> None:
-        """Atomically saves or updates a SubscriptionRecord."""
-        conn = self._get_connection()
-        status_val = record.status.value if hasattr(record.status, "value") else str(record.status)
-        with conn:
-            conn.execute(
-                """
-                INSERT INTO subscriptions (
-                    subscription_id, customer_id, plan_id, status,
-                    current_cycle, total_cycles, amount_due_paise, currency,
-                    charge_attempt_count, next_charge_at, last_case_id,
-                    source, is_recoverable, metadata_json, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(subscription_id) DO UPDATE SET
-                    status=excluded.status,
-                    current_cycle=excluded.current_cycle,
-                    total_cycles=COALESCE(excluded.total_cycles, subscriptions.total_cycles),
-                    amount_due_paise=excluded.amount_due_paise,
-                    currency=excluded.currency,
-                    charge_attempt_count=excluded.charge_attempt_count,
-                    next_charge_at=COALESCE(excluded.next_charge_at, subscriptions.next_charge_at),
-                    last_case_id=COALESCE(excluded.last_case_id, subscriptions.last_case_id),
-                    is_recoverable=excluded.is_recoverable,
-                    metadata_json=excluded.metadata_json,
-                    updated_at=excluded.updated_at;
-                """,
-                (
-                    record.subscription_id,
-                    record.customer_id,
-                    record.plan_id,
-                    status_val,
-                    record.current_cycle,
-                    record.total_cycles,
-                    record.amount_due_paise,
-                    record.currency,
-                    record.charge_attempt_count,
-                    record.next_charge_at,
-                    record.last_case_id,
-                    record.source,
-                    1 if record.is_recoverable else 0,
-                    json.dumps(record.metadata),
-                    record.created_at,
-                    record.updated_at,
-                ),
-            )
-
-    def get_subscription(self, subscription_id: str) -> Optional[SubscriptionRecord]:
-        """Retrieves a SubscriptionRecord by its ID."""
-        conn = self._get_connection()
-        cur = conn.execute("SELECT * FROM subscriptions WHERE subscription_id = ?;", (subscription_id,))
-        row = cur.fetchone()
-        if not row:
-            return None
-        raw_status = row["status"]
-        sub_status = None
-        for s in RazorpaySubscriptionStatus:
-            if s.value == raw_status:
-                sub_status = s
-                break
-        if sub_status is None:
-            sub_status = RazorpaySubscriptionStatus.PENDING
-
-        return SubscriptionRecord(
-            subscription_id=row["subscription_id"],
-            customer_id=row["customer_id"],
-            plan_id=row["plan_id"],
-            status=sub_status,
-            current_cycle=row["current_cycle"],
-            total_cycles=row["total_cycles"],
-            amount_due_paise=row["amount_due_paise"],
-            currency=row["currency"],
-            charge_attempt_count=row["charge_attempt_count"],
-            next_charge_at=row["next_charge_at"],
-            last_case_id=row["last_case_id"],
-            source=row["source"],
-            is_recoverable=bool(row["is_recoverable"]),
-            metadata=json.loads(row["metadata_json"] or "{}"),
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-        )
-
-    def list_subscriptions(self, status_filter: Optional[str] = None, limit: int = 50) -> List[SubscriptionRecord]:
-        """Lists subscriptions, optionally filtered by status."""
-        conn = self._get_connection()
-        if status_filter:
-            cur = conn.execute(
-                "SELECT * FROM subscriptions WHERE status = ? ORDER BY updated_at DESC LIMIT ?;",
-                (status_filter.lower(), limit),
-            )
-        else:
-            cur = conn.execute(
-                "SELECT * FROM subscriptions ORDER BY updated_at DESC LIMIT ?;",
-                (limit,),
-            )
-        rows = cur.fetchall()
-        results = []
-        for row in rows:
-            raw_status = row["status"]
-            sub_status = None
-            for s in RazorpaySubscriptionStatus:
-                if s.value == raw_status:
-                    sub_status = s
-                    break
-            if sub_status is None:
-                sub_status = RazorpaySubscriptionStatus.PENDING
-
-            results.append(
-                SubscriptionRecord(
-                    subscription_id=row["subscription_id"],
-                    customer_id=row["customer_id"],
-                    plan_id=row["plan_id"],
-                    status=sub_status,
-                    current_cycle=row["current_cycle"],
-                    total_cycles=row["total_cycles"],
-                    amount_due_paise=row["amount_due_paise"],
-                    currency=row["currency"],
-                    charge_attempt_count=row["charge_attempt_count"],
-                    next_charge_at=row["next_charge_at"],
-                    last_case_id=row["last_case_id"],
-                    source=row["source"],
-                    is_recoverable=bool(row["is_recoverable"]),
-                    metadata=json.loads(row["metadata_json"] or "{}"),
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
-                )
-            )
-        return results
-
-    def get_case_by_billing_cycle(self, subscription_id: str, billing_cycle_id: str) -> Optional[RecoveryCaseRecord]:
-        """Retrieves a recovery case record matching the subscription and billing cycle identity."""
-        conn = self._get_connection()
-        cur = conn.execute(
-            """
-            SELECT * FROM cases
-            WHERE subscription_id = ? AND billing_cycle_id = ?
-            ORDER BY created_at DESC LIMIT 1;
-            """,
-            (subscription_id, billing_cycle_id),
-        )
-        row = cur.fetchone()
-        if not row:
-            return None
-        return self.get_case(row["case_id"])
-
-    def update_subscription_status(
-        self,
-        subscription_id: str,
-        status: RazorpaySubscriptionStatus,
-        next_charge_at: Optional[str] = None,
-    ) -> None:
-        """Updates subscription state in subscriptions table."""
-        conn = self._get_connection()
-        now_ts = datetime.now(timezone.utc).isoformat()
-        status_val = status.value if hasattr(status, "value") else str(status)
-        with conn:
-            conn.execute(
-                """
-                UPDATE subscriptions
-                SET status = ?, next_charge_at = COALESCE(?, next_charge_at), updated_at = ?
-                WHERE subscription_id = ?;
-                """,
-                (status_val, next_charge_at, now_ts, subscription_id),
-            )
 
     def update_case_resolution_source(self, case_id: str, resolution_source: str) -> None:
         """Updates resolution source on a case record."""

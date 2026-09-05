@@ -297,6 +297,7 @@ class RazorpayClient:
                     currency=inv.get("currency", "INR"),
                     status=inv.get("status", "issued"),
                     payment_id=inv.get("payment_id"),
+                    notes=inv.get("notes", {}),
                     raw_response=inv,
                 )
             )
@@ -317,5 +318,6 @@ class RazorpayClient:
             currency=raw.get("currency", "INR"),
             status=raw.get("status", "issued"),
             payment_id=raw.get("payment_id"),
+            notes=raw.get("notes", {}),
             raw_response=raw,
         )

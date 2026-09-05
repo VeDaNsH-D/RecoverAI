@@ -143,6 +143,7 @@ class RazorpayInvoiceResponse(BaseModel):
     currency: str = "INR"
     status: str
     payment_id: Optional[str] = None
+    notes: Dict[str, Any] = Field(default_factory=dict)
     raw_response: Dict[str, Any] = Field(default_factory=dict)
 
 

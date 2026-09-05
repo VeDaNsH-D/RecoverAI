@@ -44,6 +44,11 @@ def evaluate_subscription_stopping_rules(
                 should_stop=True,
                 reason="Subscription is completed. No outstanding cycles remain.",
             )
+        if subscription.status == RazorpaySubscriptionStatus.UNKNOWN:
+            return StoppingRuleResult(
+                should_stop=True,
+                reason="Subscription status is UNKNOWN. Interventions fail closed.",
+            )
 
     # 2. Existing recovery case checks
     if case is not None:

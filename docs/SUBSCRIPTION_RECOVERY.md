@@ -83,10 +83,10 @@ $$\text{case\_id} = \text{derive\_billing\_cycle\_case\_id}(\text{subscription\_
 
 ## 4. Hard Deterministic Stopping Rules
 
-Before any action is dispatched for a subscription failure, `evaluate_subscription_stopping_rules` evaluates five non-negotiable safety constraints:
+Before any action is dispatched for a subscription failure, `evaluate_subscription_stopping_rules` evaluates six non-negotiable safety constraints:
 
-1. **Terminal Subscription Guard**:
-   If subscription status is `CANCELLED` or `COMPLETED`, all interventions are prohibited.
+1. **Terminal / Fail-Closed Subscription Guard**:
+   If subscription status is `CANCELLED`, `COMPLETED`, or `UNKNOWN`, all interventions are prohibited. Unrecognized provider statuses fail closed.
 2. **Terminal Case Guard**:
    If the recovery case is already in a terminal state (`RECOVERED` or `NOT_RECOVERED`), interventions are stopped.
 3. **Single Intervention per Cycle Bound**:
@@ -98,15 +98,24 @@ Before any action is dispatched for a subscription failure, `evaluate_subscripti
 
 ---
 
-## 5. Economic Attribution & Anti-Double-Counting
+## 5. Economic Attribution, Settlement Evidence & Anti-Double-Counting
 
-To guarantee honest scientific reporting and prevent revenue inflation:
+To guarantee honest scientific reporting, eliminate false recovery claims, and prevent revenue inflation:
+
+### Invariants:
+1. **Subscription ACTIVE $\neq$ Billing Cycle RECOVERED**: Active subscription status alone is not proof of billing cycle settlement. Reconciliations require genuine settlement evidence for the specific matching invoice.
+2. **$\text{ACTION\_EXECUTED}$ Preservation**:
+   - $\text{ACTION\_EXECUTED} \xrightarrow{\text{matching invoice unpaid}} \text{Remain ACTION\_EXECUTED}$ (No revenue claimed)
+   - $\text{ACTION\_EXECUTED} \xrightarrow{\text{matching invoice paid}} \text{RECOVERED}$ ($\text{recovered\_amount} = \text{invoice.amount\_paid}$)
+3. **Authoritative Provider Money Rule**: Provider invoice/payment data is authoritative. `notes` metadata is never authoritative for financial calculations. For a paid invoice, recovered revenue is strictly `invoice.amount_paid`.
+4. **Deterministic Attribution Proof**: RecoverAI attribution (`recoverai_intervention`) is claimed only with deterministic proof connecting the payment to the RecoverAI action (e.g. payment link payment ID match). Ambiguous sources default to `provider_auto_retry`.
 
 | Resolution Mechanism | Attributed Source | Counted in RecoverAI Net Revenue? |
 | :--- | :--- | :--- |
 | Razorpay background auto-retry succeeds | `provider_auto_retry` | **No** (Descriptive gross recovery only) |
 | Customer pays via RecoverAI Payment Link | `recoverai_intervention` | **Yes** ($\text{Gross} - \text{Action Cost}$) |
 | Customer pays after RecoverAI Reminder/Escalation | `recoverai_intervention` | **Yes** ($\text{Gross} - \text{Action Cost}$) |
+| Ambiguous settlement source | `provider_auto_retry` | **No** |
 | Subscription cancelled/expired | `not_resolved` | **No** |
 
 All financial arithmetic is computed in **64-bit integer paise** (1 INR = 100 paise).

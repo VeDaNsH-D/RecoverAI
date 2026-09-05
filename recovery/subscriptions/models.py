@@ -14,6 +14,7 @@ class RazorpaySubscriptionStatus(str, Enum):
     """
     Authoritative Razorpay Subscription lifecycle states.
     Strictly mirrors Razorpay documentation: authenticated, active, pending, halted, cancelled, completed.
+    Plus fail-closed UNKNOWN state.
     """
     AUTHENTICATED = "authenticated"
     ACTIVE = "active"
@@ -21,6 +22,7 @@ class RazorpaySubscriptionStatus(str, Enum):
     HALTED = "halted"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
+    UNKNOWN = "unknown"
 
 
 class RecoverySource(str, Enum):
@@ -67,8 +69,12 @@ class SubscriptionRecord(BaseModel):
 
     @property
     def is_terminal(self) -> bool:
-        """Returns True if subscription lifecycle has ended (cancelled or completed)."""
-        return self.status in (RazorpaySubscriptionStatus.CANCELLED, RazorpaySubscriptionStatus.COMPLETED)
+        """Returns True if subscription lifecycle has ended (cancelled, completed, or unknown)."""
+        return self.status in (
+            RazorpaySubscriptionStatus.CANCELLED,
+            RazorpaySubscriptionStatus.COMPLETED,
+            RazorpaySubscriptionStatus.UNKNOWN,
+        )
 
 
 def derive_billing_cycle_case_id(
