@@ -17,9 +17,11 @@
             <polyline points="17 6 23 6 23 12"></polyline>
           </svg>
         </div>
-        <div>
-          <div class="brand-title">RecoverAI <span class="brand-subtitle">Command Center</span></div>
-          <div class="brand-tagline">Autonomous AI Revenue Recovery & Observability</div>
+        <div class="brand-meta">
+          <div class="brand-title">
+            RecoverAI <span class="brand-tag">OPS_CONSOLE</span>
+          </div>
+          <div class="brand-tagline">Autonomous AI Revenue Recovery & Observability Surface</div>
         </div>
       </div>
 
@@ -63,303 +65,391 @@
 
   <!-- Main Container -->
   <main class="main-container">
-    <!-- Tab Navigation Bar -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="tab-overview">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        Overview & Funnel
-      </button>
-      <button class="tab-btn" data-tab="tab-queue">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-        Recovery Queue
-        <span class="tab-count-pill" id="queueTabCount">0</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-subscriptions">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-        Subscriptions
-        <span class="tab-count-pill" id="subTabCount">0</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-analytics">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        Analytics & Trends
-      </button>
-      <div class="last-updated-text" id="lastUpdatedText">Updated: just now</div>
-    </nav>
 
-    <!-- TAB 1: OVERVIEW & FUNNEL -->
-    <section id="tab-overview" class="tab-content active">
-      <!-- KPI Topline Metric Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-title">Revenue at Risk</div>
-          <div class="kpi-value text-amber" id="kpiRevenueAtRisk">₹0.00</div>
-          <div class="kpi-subtext" id="kpiTotalCases">0 failed incidents</div>
+    <!-- CENTERPIECE 1: RECOVERY NETWORK PIPELINE (Hero Visualization) -->
+    <section class="hero-network-section">
+      <div class="network-header">
+        <div class="section-label">
+          <span>[01 // RECOVERY_NETWORK_PIPELINE]</span>
+          <span class="section-label-dim">— End-to-End Decision & Settlement Telemetry</span>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">RecoverAI Net Recovered</div>
-          <div class="kpi-value text-emerald" id="kpiRecoverAINet">₹0.00</div>
-          <div class="kpi-subtext" id="kpiRecoverAINetSub">Attributed gross − action costs</div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">Provider Auto-Recovered</div>
-          <div class="kpi-value text-sky" id="kpiProviderGross">₹0.00</div>
-          <div class="kpi-subtext" id="kpiProviderGrossSub">Isolated provider retries</div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">Total Gross Recovered</div>
-          <div class="kpi-value text-indigo" id="kpiGrossRecovered">₹0.00</div>
-          <div class="kpi-subtext" id="kpiRecoveredCases">0 settled cases</div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">Action Friction Costs</div>
-          <div class="kpi-value text-rose" id="kpiActionCost">₹0.00</div>
-          <div class="kpi-subtext" id="kpiActionsExecuted">0 actions executed</div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">Recovery Rate</div>
-          <div class="kpi-value text-slate" id="kpiRecoveryRate">0.0%</div>
-          <div class="kpi-subtext" id="kpiExecRate">Exec success: 0.0%</div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-title">Active Queue</div>
-          <div class="kpi-value text-violet" id="kpiPendingCases">0</div>
-          <div class="kpi-subtext">Open recovery cases</div>
+        <div class="text-xs text-dim mono">
+          AUTONOMOUS BOUNDED RECOVERY PIPELINE
         </div>
       </div>
 
-      <!-- Charts Row: Conversion Funnel & Attribution Donut -->
-      <div class="charts-row">
-        <!-- 5-Stage Conversion Funnel -->
-        <div class="card funnel-card">
-          <div class="card-header">
-            <h3 class="card-title">Recovery Conversion Funnel</h3>
-            <span class="card-caption">End-to-end incident lifecycle progression</span>
+      <div class="pipeline-container">
+        <!-- Node 1: DETECT -->
+        <div class="pipeline-node" id="nodeDetect">
+          <div class="node-step-tag">
+            <span>01. DETECT</span>
+            <span class="node-indicator"></span>
           </div>
-          <div class="funnel-container" id="funnelContainer">
-            <!-- Rendered dynamically via dashboard.js SVG -->
-          </div>
-        </div>
-
-        <!-- Authoritative Settlement Attribution Donut -->
-        <div class="card attribution-card">
-          <div class="card-header">
-            <h3 class="card-title">Settlement Attribution</h3>
-            <span class="card-caption">RecoverAI vs Provider Auto-Retries vs Unresolved</span>
-          </div>
-          <div class="attribution-container" id="attributionContainer">
-            <!-- Rendered dynamically via dashboard.js SVG -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Breakdowns Row: Action Distribution & Failure Diagnostics -->
-      <div class="charts-row">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Bounded Action Category Yield</h3>
-            <span class="card-caption">Decisions, executed volume, and gross recovery by action</span>
-          </div>
-          <div class="breakdown-list" id="actionBreakdownList">
-            <!-- Populated dynamically -->
+          <div class="node-title">Failed Payment</div>
+          <div class="node-desc">Inbound webhook / gateway failure event ingestion</div>
+          <div class="node-metric">
+            <span class="node-metric-val" id="nodeAtRiskCases">0</span>
+            <span class="node-metric-label">AT RISK (<span id="nodeAtRiskAmount">₹0</span>)</span>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Diagnosed Failure Reasons</h3>
-            <span class="card-caption">Distribution and recovery rates across incident types</span>
+        <!-- Node 2: DECIDE -->
+        <div class="pipeline-node" id="nodeDecide">
+          <div class="node-step-tag">
+            <span>02. DECIDE</span>
+            <span class="node-indicator"></span>
           </div>
-          <div class="breakdown-list" id="failureBreakdownList">
-            <!-- Populated dynamically -->
+          <div class="node-title">AI Engine Inference</div>
+          <div class="node-desc">Expected net value uplift & candidate policy evaluation</div>
+          <div class="node-metric">
+            <span class="node-metric-val" id="nodeDecidedCases">0</span>
+            <span class="node-metric-label">EVALUATED</span>
+          </div>
+        </div>
+
+        <!-- Node 3: ACT -->
+        <div class="pipeline-node" id="nodeAct">
+          <div class="node-step-tag">
+            <span>03. ACT</span>
+            <span class="node-indicator"></span>
+          </div>
+          <div class="node-title">Bounded Action</div>
+          <div class="node-desc">Safety-gated dispatch (retry, payment link, reminder)</div>
+          <div class="node-metric">
+            <span class="node-metric-val" id="nodeActionedCases">0</span>
+            <span class="node-metric-label">DISPATCHED</span>
+          </div>
+        </div>
+
+        <!-- Node 4: OBSERVE -->
+        <div class="pipeline-node" id="nodeObserve">
+          <div class="node-step-tag">
+            <span>04. OBSERVE</span>
+            <span class="node-indicator"></span>
+          </div>
+          <div class="node-title">Gateway Telemetry</div>
+          <div class="node-desc">Provider webhook verification & execution tracking</div>
+          <div class="node-metric">
+            <span class="node-metric-val" id="nodeSettledCases">0</span>
+            <span class="node-metric-label">OBSERVED</span>
+          </div>
+        </div>
+
+        <!-- Node 5: ATTRIBUTE -->
+        <div class="pipeline-node" id="nodeAttribute">
+          <div class="node-step-tag">
+            <span>05. ATTRIBUTE</span>
+            <span class="node-indicator"></span>
+          </div>
+          <div class="node-title">Settlement Ledger</div>
+          <div class="node-desc">Authoritative causal attribution & net yield isolation</div>
+          <div class="node-metric">
+            <span class="node-metric-val text-emerald" id="nodeRecoveredCases">0</span>
+            <span class="node-metric-label">RECOVERED (<span id="nodeRecoveredAmount">₹0</span>)</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 2: RECOVERY QUEUE -->
-    <section id="tab-queue" class="tab-content">
-      <div class="card">
-        <!-- Filter Controls Toolbar -->
-        <div class="filter-toolbar">
-          <div class="filter-group">
-            <label class="filter-label">Search</label>
-            <input type="text" id="filterSearch" class="form-input" placeholder="Search case or customer ID...">
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">State</label>
-            <select id="filterState" class="form-select">
-              <option value="">All States</option>
-              <option value="DECIDED">Decided</option>
-              <option value="ACTION_PENDING">Action Pending</option>
-              <option value="ACTION_EXECUTED">Action Executed</option>
-              <option value="RECOVERED">Recovered</option>
-              <option value="NOT_RECOVERED">Not Recovered</option>
-              <option value="EXECUTION_FAILED">Execution Failed</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Action</label>
-            <select id="filterAction" class="form-select">
-              <option value="">All Actions</option>
-              <option value="no_action">No Action</option>
-              <option value="retry">Retry</option>
-              <option value="payment_link">Payment Link</option>
-              <option value="reminder">Reminder</option>
-              <option value="escalate">Escalate</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Failure Type</label>
-            <select id="filterFailureType" class="form-select">
-              <option value="">All Failure Types</option>
-              <option value="insufficient_funds">Insufficient Funds</option>
-              <option value="invalid_payment_method">Invalid Payment Method</option>
-              <option value="temporary_failure">Temporary Failure</option>
-              <option value="unknown_failure">Unknown Failure</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Segment</label>
-            <select id="filterSubscription" class="form-select">
-              <option value="">All Payments</option>
-              <option value="true">Subscriptions</option>
-              <option value="false">One-Off</option>
-            </select>
-          </div>
-
-          <div class="filter-actions">
-            <button id="applyFiltersBtn" class="btn btn-primary btn-sm">Apply</button>
-            <button id="resetFiltersBtn" class="btn btn-secondary btn-sm">Reset</button>
-          </div>
+    <!-- CENTERPIECE 2: FLOATING TELEMETRY INSTRUMENTS -->
+    <section class="telemetry-instrument-deck">
+      <!-- Tile 1: Revenue at Risk -->
+      <div class="telemetry-tile tile-risk">
+        <div class="tile-tag">
+          <span>[AT_RISK_CAPITAL]</span>
+          <span class="text-amber">●</span>
         </div>
+        <div class="tile-value text-amber" id="kpiRevenueAtRisk">₹0.00</div>
+        <div class="tile-subtext" id="kpiTotalCases">0 failed incidents</div>
+      </div>
 
-        <!-- Cases Queue Table -->
-        <div class="table-responsive">
-          <table class="data-table" id="casesTable">
-            <thead>
-              <tr>
-                <th>Case ID</th>
-                <th>Customer</th>
-                <th>Amount</th>
-                <th>State</th>
-                <th>Recommended Action</th>
-                <th>Failure Reason</th>
-                <th>Retries</th>
-                <th>Segment</th>
-                <th>Created</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="casesTableBody">
-              <!-- Rows populated dynamically -->
-            </tbody>
-          </table>
+      <!-- Tile 2: Gross Settled -->
+      <div class="telemetry-tile tile-settled">
+        <div class="tile-tag">
+          <span>[GROSS_SETTLED]</span>
+          <span class="text-cyan">●</span>
         </div>
+        <div class="tile-value text-bright" id="kpiGrossSettled">₹0.00</div>
+        <div class="tile-subtext">Total verified recovered</div>
+      </div>
 
-        <!-- Pagination Bar -->
-        <div class="pagination-bar">
-          <div class="pagination-info" id="paginationInfo">Showing 0 of 0 cases</div>
-          <div class="pagination-controls">
-            <button id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>Previous</button>
-            <span class="page-indicator" id="pageIndicator">Page 1</span>
-            <button id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>Next</button>
-          </div>
+      <!-- Tile 3: RecoverAI Net Recovered -->
+      <div class="telemetry-tile tile-net">
+        <div class="tile-tag">
+          <span>[RECOVERAI_NET_YIELD]</span>
+          <span class="text-emerald">●</span>
         </div>
+        <div class="tile-value text-emerald" id="kpiNetRecovered">₹0.00</div>
+        <div class="tile-subtext" id="kpiActionCosts">Action Cost: ₹0.00</div>
+      </div>
+
+      <!-- Tile 4: Provider Isolated -->
+      <div class="telemetry-tile tile-provider">
+        <div class="tile-tag">
+          <span>[PROVIDER_ISOLATED]</span>
+          <span class="text-violet">●</span>
+        </div>
+        <div class="tile-value text-violet" id="kpiProviderGross">₹0.00</div>
+        <div class="tile-subtext">Auto-retries separated</div>
+      </div>
+
+      <!-- Tile 5: Conversion Rate -->
+      <div class="telemetry-tile tile-rate">
+        <div class="tile-tag">
+          <span>[CONVERSION_RATE]</span>
+          <span class="text-cyan">●</span>
+        </div>
+        <div class="tile-value text-bright" id="kpiRecoveryRate">0.0%</div>
+        <div class="tile-subtext">Gross recovery yield</div>
+      </div>
+
+      <!-- Tile 6: Active Incidents -->
+      <div class="telemetry-tile tile-incidents">
+        <div class="tile-tag">
+          <span>[ACTIVE_INCIDENTS]</span>
+          <span class="text-dim">●</span>
+        </div>
+        <div class="tile-value text-bright" id="kpiActiveCases">0</div>
+        <div class="tile-subtext">In-flight interventions</div>
       </div>
     </section>
 
-    <!-- TAB 3: SUBSCRIPTIONS -->
-    <section id="tab-subscriptions" class="tab-content">
-      <div class="card">
-        <div class="card-header flex-between">
-          <div>
-            <h3 class="card-title">Recurring Subscriptions</h3>
-            <span class="card-caption">Active SaaS subscriptions and billing cycles under RecoverAI management</span>
-          </div>
-          <div class="text-subdued text-xs">
-            Reconciliation verifies authentic Razorpay invoice settlement evidence.
-          </div>
-        </div>
+    <!-- MAIN WORKSPACE: LEFT TAB DECK + RIGHT LIVE EVENT STREAM -->
+    <div class="workspace-grid">
+      <!-- Left: Tab Deck -->
+      <div class="tab-deck">
+        <nav class="tab-nav">
+          <button class="tab-btn active" data-tab="tab-queue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            Recovery Queue
+            <span class="tab-count-pill" id="queueTabCount">0</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-subscriptions">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            Subscriptions
+            <span class="tab-count-pill" id="subTabCount">0</span>
+          </button>
+          <button class="tab-btn" data-tab="tab-analytics">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            Analytics & Funnel
+          </button>
+          <div class="tab-meta-right" id="lastUpdatedText">Updated: just now</div>
+        </nav>
 
-        <div class="table-responsive">
-          <table class="data-table" id="subscriptionsTable">
-            <thead>
-              <tr>
-                <th>Subscription ID</th>
-                <th>Customer</th>
-                <th>Status</th>
-                <th>Cycle</th>
-                <th>Amount Due</th>
-                <th>Charge Attempts</th>
-                <th>Recoverable</th>
-                <th>Last Updated</th>
-                <th>Operational Action</th>
-              </tr>
-            </thead>
-            <tbody id="subscriptionsTableBody">
-              <!-- Rows populated dynamically -->
-            </tbody>
-          </table>
-        </div>
+        <!-- TAB 1: RECOVERY QUEUE -->
+        <section id="tab-queue" class="tab-content active">
+          <div class="card">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+              <div class="filter-group">
+                <label class="filter-label">Search</label>
+                <input type="text" id="searchInput" class="form-input" placeholder="Case or Cust ID...">
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">State</label>
+                <select id="filterState" class="form-select">
+                  <option value="">All States</option>
+                  <option value="DECIDED">Decided</option>
+                  <option value="ACTION_PENDING">Action Pending</option>
+                  <option value="ACTION_EXECUTED">Action Executed</option>
+                  <option value="RECOVERED">Recovered</option>
+                  <option value="NOT_RECOVERED">Not Recovered</option>
+                  <option value="EXECUTION_FAILED">Execution Failed</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Action</label>
+                <select id="filterAction" class="form-select">
+                  <option value="">All Actions</option>
+                  <option value="no_action">No Action</option>
+                  <option value="retry">Retry</option>
+                  <option value="payment_link">Payment Link</option>
+                  <option value="reminder">Reminder</option>
+                  <option value="escalate">Escalate</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Failure Type</label>
+                <select id="filterFailureType" class="form-select">
+                  <option value="">All Failure Types</option>
+                  <option value="insufficient_funds">Insufficient Funds</option>
+                  <option value="invalid_payment_method">Invalid Payment Method</option>
+                  <option value="temporary_failure">Temporary Failure</option>
+                  <option value="unknown_failure">Unknown Failure</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="filter-label">Segment</label>
+                <select id="filterSubscription" class="form-select">
+                  <option value="">All Payments</option>
+                  <option value="true">Subscriptions</option>
+                  <option value="false">One-Off</option>
+                </select>
+              </div>
+
+              <div class="filter-actions">
+                <button id="applyFiltersBtn" class="btn btn-primary btn-sm">Apply</button>
+                <button id="resetFiltersBtn" class="btn btn-secondary btn-sm">Reset</button>
+              </div>
+            </div>
+
+            <!-- Cases Table -->
+            <div class="table-responsive">
+              <table class="data-table" id="casesTable">
+                <thead>
+                  <tr>
+                    <th>Case ID</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>State</th>
+                    <th>Action</th>
+                    <th>Failure Reason</th>
+                    <th>Retries</th>
+                    <th>Segment</th>
+                    <th>Created</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="casesTableBody">
+                  <!-- Rows populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-bar">
+              <div class="pagination-info" id="paginationInfo">Showing 0 of 0 cases</div>
+              <div class="pagination-controls">
+                <button id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>Previous</button>
+                <span class="page-indicator" id="pageIndicator">Page 1</span>
+                <button id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>Next</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: SUBSCRIPTIONS -->
+        <section id="tab-subscriptions" class="tab-content">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">Recurring Subscriptions</h3>
+                <span class="card-caption">Active SaaS subscriptions and billing cycles under RecoverAI management</span>
+              </div>
+              <div class="text-dim text-xs mono">
+                AUTHORITATIVE INVOICE SETTLEMENT RECONCILIATION
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="subscriptionsTable">
+                <thead>
+                  <tr>
+                    <th>Subscription ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Cycle</th>
+                    <th>Amount Due</th>
+                    <th>Charge Attempts</th>
+                    <th>Recoverable</th>
+                    <th>Last Updated</th>
+                    <th>Operational Action</th>
+                  </tr>
+                </thead>
+                <tbody id="subscriptionsTableBody">
+                  <!-- Rows populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: ANALYTICS & FUNNEL -->
+        <section id="tab-analytics" class="tab-content">
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">5-Stage Conversion Funnel</h3>
+                <span class="card-caption">Deterministic progression from failed payment to verified settlement</span>
+              </div>
+              <div class="text-dim text-xs mono">
+                CAUSAL FUNNEL STAGES
+              </div>
+            </div>
+
+            <div class="funnel-container" id="funnelContainer">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">Time-Series Recovery Trends</h3>
+                <span class="card-caption">Observational daily/weekly aggregated revenue volume and intervention counts</span>
+              </div>
+              <div class="control-group">
+                <select id="trendIntervalSelect" class="form-select select-compact">
+                  <option value="daily" selected>Daily</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="trend-chart-container" id="trendChartContainer">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="charts-row">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recovery by Prior Retry Count</h3>
+                <span class="card-caption">Yield and volume across customer retry counts</span>
+              </div>
+              <div class="breakdown-list" id="retryBreakdownList">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Subscription vs One-Off Yield</h3>
+                <span class="card-caption">Comparative recovery performance by payment segment</span>
+              </div>
+              <div class="breakdown-list" id="segmentBreakdownList">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
 
-    <!-- TAB 4: ANALYTICS & TRENDS -->
-    <section id="tab-analytics" class="tab-content">
-      <div class="card">
-        <div class="card-header flex-between">
-          <div>
-            <h3 class="card-title">Time-Series Recovery Trends</h3>
-            <span class="card-caption">Observational daily/weekly aggregated revenue volume and intervention counts</span>
+      <!-- Right: Live Recovery Activity Stream -->
+      <aside class="live-stream-panel">
+        <div class="stream-header">
+          <div class="stream-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            LIVE TELEMETRY
           </div>
-          <div class="control-group">
-            <select id="trendIntervalSelect" class="form-select select-compact">
-              <option value="daily" selected>Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
+          <div class="stream-live-pill">
+            <span class="pulse-dot"></span>
+            LIVE
           </div>
         </div>
 
-        <div class="trend-chart-container" id="trendChartContainer">
-          <!-- Rendered dynamically -->
+        <div class="stream-container" id="liveStreamContainer">
+          <!-- Items populated dynamically -->
         </div>
-      </div>
-
-      <div class="charts-row" style="margin-top: 1.5rem;">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Recovery by Prior Retry Count</h3>
-            <span class="card-caption">Recovery yield and volume across retry counts</span>
-          </div>
-          <div class="breakdown-list" id="retryBreakdownList">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Subscription vs One-Off Yield</h3>
-            <span class="card-caption">Comparative recovery performance by segment</span>
-          </div>
-          <div class="breakdown-list" id="segmentBreakdownList">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </div>
-    </section>
+      </aside>
+    </div>
   </main>
 
-  <!-- CASE DETAIL MODAL / DRAWER -->
+  <!-- CENTERPIECE 4: CYBERNETIC CASE INVESTIGATION DRAWER / MODAL -->
   <div class="modal-backdrop" id="caseDetailModal">
     <div class="modal-dialog modal-lg">
       <div class="modal-header">
@@ -371,55 +461,105 @@
       </div>
 
       <div class="modal-body">
+        <!-- 6-Stage Lifecycle Progress Stepper -->
+        <div class="stepper-container" id="modalLifecycleStepper">
+          <div class="stepper-step" data-step="DETECTED">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">01. DETECTED</div>
+          </div>
+          <div class="stepper-step" data-step="DECIDED">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">02. DECIDED</div>
+          </div>
+          <div class="stepper-step" data-step="ACTION_PENDING">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">03. PENDING</div>
+          </div>
+          <div class="stepper-step" data-step="ACTION_EXECUTED">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">04. EXECUTED</div>
+          </div>
+          <div class="stepper-step" data-step="SETTLED">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">05. SETTLED</div>
+          </div>
+          <div class="stepper-step" data-step="ATTRIBUTED">
+            <div class="stepper-bar"></div>
+            <div class="stepper-label">06. ATTRIBUTED</div>
+          </div>
+        </div>
+
         <!-- 3-Column Detail Cards -->
         <div class="detail-grid">
           <!-- Column 1: Incident Context -->
           <div class="detail-card">
             <h4 class="detail-section-title">Incident Context</h4>
-            <div class="detail-row"><span class="detail-key">Case ID:</span><span class="detail-val mono" id="dtCaseId">-</span></div>
+            <div class="detail-row"><span class="detail-key">Case ID:</span><span class="detail-val mono text-xs" id="dtCaseId">-</span></div>
             <div class="detail-row"><span class="detail-key">Customer:</span><span class="detail-val mono" id="dtCustomerId">-</span></div>
-            <div class="detail-row"><span class="detail-key">Amount:</span><span class="detail-val font-bold" id="dtAmount">-</span></div>
+            <div class="detail-row"><span class="detail-key">Amount:</span><span class="detail-val font-bold text-bright" id="dtAmount">-</span></div>
             <div class="detail-row"><span class="detail-key">State:</span><span class="detail-val" id="dtState">-</span></div>
-            <div class="detail-row"><span class="detail-key">Payment Method:</span><span class="detail-val uppercase" id="dtPaymentMethod">-</span></div>
+            <div class="detail-row"><span class="detail-key">Payment Method:</span><span class="detail-val uppercase mono text-xs" id="dtPaymentMethod">-</span></div>
             <div class="detail-row"><span class="detail-key">Failure Type:</span><span class="detail-val" id="dtFailureType">-</span></div>
-            <div class="detail-row"><span class="detail-key">Prior Retries:</span><span class="detail-val" id="dtRetryCount">0</span></div>
-            <div class="detail-row"><span class="detail-key">Subscription ID:</span><span class="detail-val mono" id="dtSubscriptionId">-</span></div>
-            <div class="detail-row"><span class="detail-key">Billing Cycle:</span><span class="detail-val mono" id="dtBillingCycleId">-</span></div>
+            <div class="detail-row"><span class="detail-key">Prior Retries:</span><span class="detail-val mono" id="dtRetryCount">0</span></div>
+            <div class="detail-row"><span class="detail-key">Subscription ID:</span><span class="detail-val mono text-xs" id="dtSubscriptionId">-</span></div>
+            <div class="detail-row"><span class="detail-key">Billing Cycle:</span><span class="detail-val mono text-xs" id="dtBillingCycleId">-</span></div>
           </div>
 
-          <!-- Column 2: Decision Model Forecast (Estimates) -->
+          <!-- Column 2: Decision Model Forecast -->
           <div class="detail-card">
             <div class="flex-between">
               <h4 class="detail-section-title">Model Forecast</h4>
               <span class="badge badge-subdued text-xs">Prediction</span>
             </div>
-            <div class="detail-row"><span class="detail-key">Action:</span><span class="detail-val font-bold text-indigo" id="dtDecAction">-</span></div>
-            <div class="detail-row"><span class="detail-key">Recovery Prob P(Y|X):</span><span class="detail-val" id="dtDecProb">-</span></div>
-            <div class="detail-row"><span class="detail-key">Exp. Gross Yield:</span><span class="detail-val" id="dtDecGross">-</span></div>
-            <div class="detail-row"><span class="detail-key">Action Cost:</span><span class="detail-val text-rose" id="dtDecCost">-</span></div>
-            <div class="detail-row"><span class="detail-key">Exp. Net Yield:</span><span class="detail-val font-bold text-emerald" id="dtDecNet">-</span></div>
-            <div class="detail-row"><span class="detail-key">Decision Margin:</span><span class="detail-val" id="dtDecMargin">-</span></div>
-            <div class="detail-row"><span class="detail-key">Model Family:</span><span class="detail-val mono text-xs" id="dtDecModel">-</span></div>
+            <div class="detail-row"><span class="detail-key">Action:</span><span class="detail-val font-bold text-cyan" id="dtDecAction">-</span></div>
+            <div class="detail-row"><span class="detail-key">P(Y|X) Prob:</span><span class="detail-val mono" id="dtDecProb">-</span></div>
+            <div class="detail-row"><span class="detail-key">Exp. Gross Yield:</span><span class="detail-val mono" id="dtDecGross">-</span></div>
+            <div class="detail-row"><span class="detail-key">Action Cost:</span><span class="detail-val mono text-rose" id="dtDecCost">-</span></div>
+            <div class="detail-row"><span class="detail-key">Exp. Net Yield:</span><span class="detail-val font-bold mono text-emerald" id="dtDecNet">-</span></div>
+            <div class="detail-row"><span class="detail-key">Decision Margin:</span><span class="detail-val mono" id="dtDecMargin">-</span></div>
+            <div class="detail-row"><span class="detail-key">Model Family:</span><span class="detail-val mono text-xs text-dim" id="dtDecModel">-</span></div>
             <div class="detail-rationale-box" id="dtDecExplanation">-</div>
           </div>
 
           <!-- Column 3: Authoritative Settlement Outcome -->
           <div class="detail-card">
             <div class="flex-between">
-              <h4 class="detail-section-title">Settlement Outcome</h4>
+              <h4 class="detail-section-title">Settlement Ledger</h4>
               <span class="badge badge-subdued text-xs">Authoritative</span>
             </div>
-            <div class="detail-row"><span class="detail-key">Action Executed:</span><span class="detail-val" id="dtActAction">-</span></div>
+            <div class="detail-row"><span class="detail-key">Action Executed:</span><span class="detail-val font-medium" id="dtActAction">-</span></div>
             <div class="detail-row"><span class="detail-key">Execution Status:</span><span class="detail-val" id="dtActStatus">-</span></div>
             <div class="detail-row"><span class="detail-key">Provider Ref:</span><span class="detail-val mono text-xs" id="dtActProviderRef">-</span></div>
             <div class="detail-row"><span class="detail-key">Settlement Status:</span><span class="detail-val font-bold" id="dtOutStatus">-</span></div>
-            <div class="detail-row"><span class="detail-key">Recovered Amount:</span><span class="detail-val font-bold text-emerald" id="dtOutAmount">-</span></div>
-            <div class="detail-row"><span class="detail-key">Attribution:</span><span class="detail-val badge" id="dtOutResolutionSource">-</span></div>
-            <div class="detail-row"><span class="detail-key">Settled At:</span><span class="detail-val text-xs" id="dtOutTimestamp">-</span></div>
+            <div class="detail-row"><span class="detail-key">Recovered Amount:</span><span class="detail-val font-bold mono text-emerald" id="dtOutAmount">-</span></div>
+            <div class="detail-row"><span class="detail-key">Attribution:</span><span class="detail-val" id="dtOutResolutionSource">-</span></div>
+            <div class="detail-row"><span class="detail-key">Settled At:</span><span class="detail-val mono text-xs text-dim" id="dtOutTimestamp">-</span></div>
           </div>
         </div>
 
-        <!-- Section 4: Chronological Audit Timeline -->
+        <!-- Section: Candidate Actions Evaluation Matrix -->
+        <div class="matrix-container" id="candidateMatrixSection">
+          <h4 class="detail-section-title">Candidate Action Evaluation Matrix</h4>
+          <div class="table-responsive" style="margin-top: 0.5rem;">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>P(Recovery)</th>
+                  <th>Exp. Gross</th>
+                  <th>Cost</th>
+                  <th>Exp. Net Yield</th>
+                  <th>Selected Policy</th>
+                </tr>
+              </thead>
+              <tbody id="candidateMatrixBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section: Chronological Audit Timeline -->
         <div class="timeline-section">
           <h4 class="detail-section-title">Chronological Operational Audit Trail</h4>
           <div class="timeline-container" id="timelineContainer">
@@ -439,7 +579,7 @@
       </div>
       <div class="modal-body">
         <p class="text-sm">You are requesting targeted reconciliation for subscription:</p>
-        <div class="sync-target-box mono font-bold text-indigo" id="syncTargetSubscriptionId">-</div>
+        <div class="sync-target-box mono font-bold text-cyan" id="syncTargetSubscriptionId">-</div>
         <div class="callout callout-info text-xs">
           <strong>Settlement Evidence Rule:</strong> RecoverAI will inspect authoritative Razorpay invoice records for this subscription's open billing cycle. Open recovery cases will only transition to RECOVERED if explicit invoice settlement is confirmed.
         </div>
