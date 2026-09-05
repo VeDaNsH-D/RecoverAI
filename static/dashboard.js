@@ -31,6 +31,7 @@
     },
     overview: null,
     cases: [],
+    subscriptions: [],
     selectedCase: null,
     selectedBranch: "candidates",
     hoveredNode: null,
@@ -110,6 +111,14 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  /** Formats raw paise in descriptions to Indian Rupees (e.g. "600000 paise" -> "₹6,000.00") */
+  function formatDescriptionRupees(desc) {
+    if (!desc) return "";
+    return desc.replace(/(\d+)\s*paise/gi, (match, paise) => {
+      return formatPaiseINR(parseInt(paise, 10));
+    });
   }
 
   // =========================================================================
@@ -675,7 +684,9 @@
     if (targetBtn) targetBtn.classList.add("active");
     if (targetPanel) targetPanel.classList.add("active");
 
-    if (viewId === "view-queue") {
+    if (viewId === "view-subscriptions") {
+      loadSubscriptions();
+    } else if (viewId === "view-queue") {
       loadCasesQueue();
     } else if (viewId === "view-analytics") {
       renderFunnel();
@@ -713,6 +724,18 @@
       document.getElementById("modalCaseSubtitle").textContent = `Customer: ${maskCustomerId(c.customer_id)} • Created: ${formatTimestamp(c.created_at)}`;
       document.getElementById("dtCategoryTag").textContent = c.is_subscription ? "SUBSCRIPTION BILLING CYCLE" : "ONE-OFF CHECKOUT";
 
+      // Linked SaaS Subscription Details
+      const subBox = document.getElementById("dtSubscriptionDetailsBox");
+      if (subBox) {
+        if (c.is_subscription || c.subscription_id) {
+          subBox.style.display = "block";
+          document.getElementById("dtSubId").textContent = c.subscription_id || "sub_active";
+          document.getElementById("dtBillingCycleId").textContent = c.billing_cycle_id || "-";
+        } else {
+          subBox.style.display = "none";
+        }
+      }
+
       // Radial Recovery Probability Gauge (00:18)
       const prob = detail.decision_forecast ? detail.decision_forecast.recovery_probability : 0.76;
       const probPct = Math.round(prob * 100);
@@ -740,7 +763,7 @@
       // AI Policy Rationale
       if (detail.decision_forecast) {
         document.getElementById("dtDecAction").textContent = detail.decision_forecast.recommended_action.toUpperCase();
-        document.getElementById("dtDecExplanation").textContent = detail.decision_forecast.explanation;
+        document.getElementById("dtDecExplanation").textContent = formatDescriptionRupees(detail.decision_forecast.explanation);
       }
 
       // Candidate Matrix in Drawer
@@ -804,7 +827,7 @@
             <span class="mono font-bold text-xs text-bright">${escapeHTML(evt.title)}</span>
             <span class="mono text-dim text-xs">${formatTimestamp(evt.timestamp)}</span>
           </div>
-          <div class="text-xs text-muted" style="margin-top:0.2rem;">${escapeHTML(evt.description)}</div>
+          <div class="text-xs text-muted" style="margin-top:0.2rem;">${escapeHTML(formatDescriptionRupees(evt.description))}</div>
         </div>
       `;
     });
@@ -812,7 +835,94 @@
   }
 
   // =========================================================================
-  // DATA QUEUE & ANALYTICS LOADERS
+  // VIEW 3: SUBSCRIPTIONS PANEL & SINGLE-SYNC MODAL
+  // =========================================================================
+
+  async function loadSubscriptions() {
+    const tbody = document.getElementById("subscriptionsTableBody");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-dim mono" style="padding:2.5rem;">[QUERYING ACTIVE SUBSCRIPTION REGISTRY...]</td></tr>`;
+
+    try {
+      const subs = await fetchAPI("/api/v1/recovery/subscriptions");
+      state.subscriptions = subs;
+      document.getElementById("subBadgeCount").textContent = subs.length;
+
+      if (!subs || subs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-dim mono" style="padding:2.5rem;">No active recurring subscriptions found.</td></tr>`;
+        return;
+      }
+
+      let rows = "";
+      subs.forEach((s) => {
+        const statusColorClass = s.status === "active" ? "text-emerald" : (s.status === "halted" ? "text-rose" : "text-amber");
+        const recoverableText = s.is_recoverable ? `<span class="text-emerald font-bold mono">YES</span>` : `<span class="text-rose font-bold mono">NO</span>`;
+
+        rows += `
+          <tr>
+            <td class="mono font-bold text-bright">${escapeHTML(s.subscription_id)}</td>
+            <td class="mono text-dim">${escapeHTML(maskCustomerId(s.customer_id))}</td>
+            <td><span class="mono text-xs font-bold ${statusColorClass}">${escapeHTML(s.status.toUpperCase())}</span></td>
+            <td class="mono text-center">${s.current_cycle}${s.total_cycles ? "/" + s.total_cycles : ""}</td>
+            <td class="mono font-bold text-bright">${formatPaiseINR(s.amount_due_paise)}</td>
+            <td class="mono text-center">${s.charge_attempt_count}</td>
+            <td class="text-xs">${recoverableText}</td>
+            <td class="text-xs text-dim mono">${formatTimestamp(s.updated_at)}</td>
+            <td>
+              <button class="btn-pill btn-primary-pill" style="padding:0.25rem 0.65rem;font-size:0.75rem;" onclick="window.openSyncModal('${escapeHTML(s.subscription_id)}')">
+                Reconcile
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = rows;
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-rose mono" style="padding:2.5rem;">Error loading subscriptions: ${escapeHTML(err.message)}</td></tr>`;
+    }
+  }
+
+  function openSyncModal(subscriptionId) {
+    state.pendingSyncSubId = subscriptionId;
+    document.getElementById("syncTargetSubscriptionId").textContent = subscriptionId;
+    const modal = document.getElementById("syncModal");
+    if (modal) modal.style.display = "flex";
+  }
+
+  function closeSyncModal() {
+    state.pendingSyncSubId = null;
+    const modal = document.getElementById("syncModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  async function executeSingleSubscriptionSync() {
+    const subId = state.pendingSyncSubId;
+    if (!subId) return;
+
+    const confirmBtn = document.getElementById("confirmSyncBtn");
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Reconciling...";
+
+    try {
+      const resp = await fetchAPI("/api/v1/recovery/subscriptions/sync", {
+        method: "POST",
+        body: JSON.stringify({ subscription_id: subId }),
+      });
+      closeSyncModal();
+      loadSubscriptions();
+      loadAllData();
+      alert(`Subscription ${subId} successfully reconciled. Status: ${resp.status}`);
+    } catch (err) {
+      alert(`Subscription sync failed: ${err.message}`);
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Reconcile Subscription";
+    }
+  }
+
+  // =========================================================================
+  // VIEW 4: DATA QUEUE & VIEW 5: ANALYTICS LOADERS
   // =========================================================================
 
   async function loadCasesQueue() {
@@ -951,15 +1061,20 @@
 
   async function loadAllData() {
     try {
-      const [overviewData, casesData] = await Promise.all([
+      const [overviewData, casesData, subsData] = await Promise.all([
         fetchAPI("/api/v1/dashboard/overview"),
         fetchAPI("/api/v1/recovery/cases?limit=50"),
+        fetchAPI("/api/v1/recovery/subscriptions"),
       ]);
 
       state.overview = overviewData;
       state.cases = casesData.items || [];
+      state.subscriptions = subsData || [];
 
-      // Update Bottom Telemetry Deck Chips
+      // Update Toolbar Badges & Bottom Telemetry Chips
+      document.getElementById("subBadgeCount").textContent = subsData.length || 0;
+      document.getElementById("queueBadgeCount").textContent = overviewData.total_cases || 0;
+
       document.getElementById("kpiRecoveryRate").textContent = formatPercent(overviewData.recovery_rate);
       document.getElementById("kpiRevenueAtRisk").textContent = formatPaiseINR(overviewData.total_amount_at_risk_paise);
       document.getElementById("kpiNetRecovered").textContent = formatPaiseINR(overviewData.recoverai_net_recovered_paise);
@@ -975,6 +1090,7 @@
   }
 
   window.inspectCase = inspectCase;
+  window.openSyncModal = openSyncModal;
 
   function init() {
     initCanvas();
@@ -1038,7 +1154,12 @@
       document.getElementById("caseDetailModal")?.classList.remove("open");
     });
 
-    // 7. AI Copilot Drawer Toggle
+    // 7. Single Subscription Sync Modal Handlers
+    document.getElementById("syncModalCloseBtn")?.addEventListener("click", closeSyncModal);
+    document.getElementById("cancelSyncBtn")?.addEventListener("click", closeSyncModal);
+    document.getElementById("confirmSyncBtn")?.addEventListener("click", executeSingleSubscriptionSync);
+
+    // 8. AI Copilot Drawer Toggle
     document.getElementById("btnToggleAIInsights")?.addEventListener("click", () => {
       document.getElementById("aiInsightsDrawer")?.classList.toggle("open");
     });
@@ -1046,13 +1167,12 @@
       document.getElementById("aiInsightsDrawer")?.classList.remove("open");
     });
 
-    // 8. AI Query Search Input
+    // 9. AI Query Search Input
     document.getElementById("aiQueryInput")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         const query = e.target.value.trim().toLowerCase();
-        if (query.includes("subscription") || query.includes("retry")) {
-          state.queue.isSubscription = "true";
-          switchView("view-queue");
+        if (query.includes("subscription") || query.includes("recurring") || query.includes("retry")) {
+          switchView("view-subscriptions");
         } else if (query) {
           state.queue.search = query;
           switchView("view-queue");
@@ -1060,12 +1180,12 @@
       }
     });
 
-    // 9. Manual Sync Trigger Button
+    // 10. Manual Sync Trigger Button
     document.getElementById("btnTriggerSimulation")?.addEventListener("click", () => {
       loadAllData();
     });
 
-    // 10. Queue Filters & Pagination
+    // 11. Queue Filters & Pagination
     document.getElementById("applyFiltersBtn")?.addEventListener("click", () => {
       state.queue.search = document.getElementById("searchInput")?.value.trim() || "";
       state.queue.state = document.getElementById("filterState")?.value || "";

@@ -37,6 +37,11 @@
         Causal Tree
       </button>
 
+      <button class="tool-btn" data-view="view-subscriptions" id="btnViewSubscriptions" title="Active Recurring SaaS Subscriptions">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        Subscriptions <span class="brand-tag" id="subBadgeCount" style="margin-left:2px;">0</span>
+      </button>
+
       <button class="tool-btn" data-view="view-queue" id="btnViewQueue" title="High-Density Recovery Queue">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
         Queue <span class="brand-tag" id="queueBadgeCount" style="margin-left:2px;">0</span>
@@ -211,7 +216,45 @@
       </div>
     </section>
 
-    <!-- VIEW 3: HIGH-DENSITY DATA QUEUE -->
+    <!-- VIEW 3: RECURRING SUBSCRIPTIONS PANEL -->
+    <section class="view-panel" id="view-subscriptions">
+      <div class="table-view-container">
+        <div class="card">
+          <div class="flex-between" style="margin-bottom:1rem;">
+            <div>
+              <h3 class="font-bold text-bright" style="font-size:1.1rem;">Recurring SaaS Subscriptions Registry</h3>
+              <span class="text-dim text-xs mono">AUTHORITATIVE RAZORPAY INVOICE SETTLEMENT RECONCILIATION</span>
+            </div>
+            <div class="text-xs text-dim mono">
+              SETTLEMENT EVIDENCE REQUIRED FOR RECOVERY
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="data-table" id="subscriptionsTable">
+              <thead>
+                <tr>
+                  <th>Subscription ID</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Billing Cycle</th>
+                  <th>Amount Due</th>
+                  <th>Charge Attempts</th>
+                  <th>Recoverable</th>
+                  <th>Last Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="subscriptionsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: HIGH-DENSITY DATA QUEUE -->
     <section class="view-panel" id="view-queue">
       <div class="table-view-container">
         <div class="card">
@@ -309,7 +352,7 @@
       </div>
     </section>
 
-    <!-- VIEW 4: ANALYTICS & CAUSAL FUNNEL -->
+    <!-- VIEW 5: ANALYTICS & CAUSAL FUNNEL -->
     <section class="view-panel" id="view-analytics">
       <div class="analytics-view-container">
         <!-- 5-Stage Funnel -->
@@ -461,6 +504,19 @@
         <div class="drawer-metric-card">
           <div class="drawer-metric-label">Settlement Status</div>
           <div class="drawer-metric-val" id="dtOutStatus">PENDING</div>
+        </div>
+      </div>
+
+      <!-- Subscription Metadata Box (Visible if subscription) -->
+      <div class="drawer-metric-card" id="dtSubscriptionDetailsBox" style="display:none;">
+        <div class="drawer-metric-label">Linked SaaS Subscription Details</div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-top:0.3rem;">
+          <span class="text-dim">Subscription ID:</span>
+          <span class="mono font-bold text-cyan" id="dtSubId">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-top:0.2rem;">
+          <span class="text-dim">Billing Cycle ID:</span>
+          <span class="mono text-bright" id="dtBillingCycleId">-</span>
         </div>
       </div>
 

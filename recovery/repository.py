@@ -1314,12 +1314,13 @@ class RecoveryRepository:
             return events
 
         # 1. Case Ingestion / Creation
+        amount_inr_formatted = f"₹{case.amount_paise / 100:,.2f}"
         events.append({
             "event_id": f"evt_case_{case.case_id}",
             "stage": "case_created",
             "timestamp": case.created_at,
             "title": "Payment Failure Ingested",
-            "description": f"Payment failure observed ({case.failure_type or 'temporary_failure'}) for {case.amount_paise} paise.",
+            "description": f"Payment failure observed ({case.failure_type or 'temporary_failure'}) for {amount_inr_formatted}.",
             "status": "COMPLETED",
             "metadata": {
                 "amount_paise": case.amount_paise,
@@ -1419,13 +1420,14 @@ class RecoveryRepository:
         )
         for out_row in cur_outcomes.fetchall():
             res_source = out_row["resolution_source"] or "recoverai_intervention"
+            recovered_inr_formatted = f"₹{out_row['recovered_amount_paise'] / 100:,.2f}"
             events.append({
                 "event_id": f"evt_out_{out_row['event_id']}",
                 "stage": "outcome_settled",
                 "timestamp": out_row["event_timestamp"] or out_row["created_at"],
                 "title": f"Outcome Settled: {out_row['outcome_status'].upper()}",
                 "description": (
-                    f"Recovered {out_row['recovered_amount_paise']} paise via {res_source}."
+                    f"Recovered {recovered_inr_formatted} via {res_source}."
                     if out_row["outcome_status"] == "recovered"
                     else "Case marked not recovered."
                 ),
