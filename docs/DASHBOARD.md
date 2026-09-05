@@ -58,7 +58,7 @@ The **Merchant Recovery Command Center** is RecoverAI's merchant-facing observab
    - No duplicate or drifting SQL calculations exist across different layers.
 
 3. **Strict Integer Paise Financial Arithmetic**:
-   - All server-side monetary sums and API schemas strictly use 64-bit integer paise (`amount_paise`, `recovered_amount_paise`, `cost_paise`, etc.).
+   - All monetary values are represented as integer paise; no floating-point monetary arithmetic is used.
    - No floating-point currency representations enter the case-level API schemas. The frontend formats paise into Indian Rupee strings (`formatPaiseINR(paise)`).
 
 4. **Attribution Isolation Guarantee**:
@@ -94,14 +94,26 @@ The **Merchant Recovery Command Center** is RecoverAI's merchant-facing observab
   - Recovery Rate (% of resolved cases recovered)
   - Active Queue (Open in-flight cases)
 - **5-Stage Conversion Funnel**:
-  - `1. Cases at Risk` $\to$ `2. Decisions Made` $\to$ `3. Actions Dispatched` $\to$ `4. Executions Succeeded` $\to$ `5. Recovered Outcomes`
+  1. `1. Cases at Risk` (`funnel.cases_at_risk`): Total failed payment incidents observed and evaluated.
+  2. `2. Decisions Evaluated` (`funnel.decisions_evaluated`): Total cases where `RecoveryDecisionEngine` computed optimal action.
+  3. `3. Interventions Dispatched` (`funnel.interventions_dispatched`): Total recovery action executions attempted.
+  4. `4. Successful Executions` (`funnel.successful_executions`): Total actions executed without provider technical failure.
+  5. `5. Recovered Outcomes` (`funnel.recovered_outcomes`): Total cases confirmed and settled as recovered.
 - **Settlement Attribution Donut**:
   - Pure SVG visual breakdown of RecoverAI Interventions vs Provider Auto-Retries vs Unresolved / In-Flight.
 - **Action Category Yield**:
   - Visual breakdown of recovery yield, decision count, and recovery rate across bounded actions (`retry`, `payment_link`, `reminder`, `escalate`, `no_action`).
 
 ### 3.2 Recovery Queue
-- **Filter Toolbar**: Filter by State (`DECIDED`, `ACTION_EXECUTED`, `RECOVERED`, `NOT_RECOVERED`, etc.), Action, Failure Type, Segment (Subscription vs One-Off), and Search (Case ID or Customer ID).
+- **Filter Toolbar**:
+  - `limit`: int (1..100, default 20)
+  - `offset`: int (ge=0, default 0)
+  - `state`: CaseState filter (`DECIDED`, `ACTION_PENDING`, `ACTION_EXECUTED`, `RECOVERED`, `NOT_RECOVERED`, `EXECUTION_FAILED`)
+  - `action`: RecoveryAction filter (`no_action`, `retry`, `payment_link`, `reminder`, `escalate`)
+  - `failure_type`: FailureType filter (`insufficient_funds`, `invalid_payment_method`, `temporary_failure`, `unknown_failure`)
+  - `is_subscription`: bool filter (`true` for subscriptions, `false` for one-off)
+  - `retry_count`: int filter (ge=0)
+  - `search`: string filter across `case_id` or `customer_id`
 - **Paginated Data Table**: Bounded pagination (`limit <= 100`), status pills, masked customer IDs, and formatted currency.
 - **View Detail Drawer**: Opens a 3-column comparative view and chronological audit timeline.
 

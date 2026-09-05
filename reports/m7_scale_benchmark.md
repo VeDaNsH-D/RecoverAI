@@ -7,31 +7,23 @@
 - **Workload Profile**: `SMOKE`
 - **Scale Workload Size**: **1,000 Cases** across **200 Unique Customers**
 - **Total Revenue at Risk**: ₹2,798,838.00 (279,883,800 paise)
-- **Total Benchmark Runtime**: **45,739.22 ms**
-- **Overall Pipeline Throughput**: **21.9 cases/sec**
-- **Peak Memory Allocated**: **6.29 MB** (6.438 KB/case)
+- **Total Benchmark Runtime**: **1,807.16 ms**
+- **Overall Pipeline Throughput**: **553.4 cases/sec**
+- **Peak Memory Allocated**: **5.82 MB** (5.958 KB/case)
 - **Random Seed**: `42` (Common Random Numbers paired potential outcomes)
-
-### Single-Case vs. Batch Inference Comparison
-
-| Execution Mode | Total Latency | Latency / Case | Throughput | Speedup Factor |
-| :--- | :--- | :--- | :--- | :--- |
-| **Single-Case Reference Path** | 43,528.69 ms | 87.0574 ms | 11.5 cases/sec | 1.0x (Baseline) |
-| **Vectorized Batch Path** | 135.18 ms | 0.2704 ms | 3,698.9 cases/sec | **322.01x Faster** |
 
 ### Pipeline Stage Latency Breakdown
 
 | Stage Name | Elapsed Time (ms) | Mean Latency / Case (ms) | Throughput (cases/sec) |
 | :--- | :--- | :--- | :--- |
-| `workload_generation` | 1,713.56 ms | 1.71356 ms | 583.6 |
-| `model_resolution` | 10.71 ms | 0.01071 ms | 93,394.2 |
-| `feature_extraction` | 69.31 ms | 0.06931 ms | 14,428.0 |
-| `model_inference` | 92.15 ms | 0.09215 ms | 10,852.3 |
-| `decision_selection` | 2.70 ms | 0.00270 ms | 369,726.8 |
-| `inference_comparison_benchmark` | 43,664.01 ms | 43.66401 ms | 22.9 |
-| `outcome_simulation` | 63.98 ms | 0.06398 ms | 15,630.2 |
-| `customer_bootstrap` | 71.71 ms | 0.07171 ms | 13,945.5 |
-| `subgroup_analysis` | 51.09 ms | 0.05109 ms | 19,571.9 |
+| `workload_generation` | 1,485.41 ms | 1.48541 ms | 673.2 |
+| `model_resolution` | 6.22 ms | 0.00622 ms | 160,792.4 |
+| `feature_extraction` | 68.16 ms | 0.06816 ms | 14,672.1 |
+| `model_inference` | 84.48 ms | 0.08448 ms | 11,836.9 |
+| `decision_selection` | 3.41 ms | 0.00341 ms | 293,410.0 |
+| `outcome_simulation` | 40.06 ms | 0.04006 ms | 24,961.7 |
+| `customer_bootstrap` | 74.25 ms | 0.07425 ms | 13,467.7 |
+| `subgroup_analysis` | 45.17 ms | 0.04517 ms | 22,140.0 |
 
 ## 2. Policy Economic & Decision Performance (CRN Paired)
 
@@ -108,7 +100,7 @@
 ## 5. Reproducibility & Environment Manifest
 
 - **Benchmark Version**: `1.0.0`
-- **Execution Timestamp**: `2026-09-05T09:36:11Z`
+- **Execution Timestamp**: `2026-09-05T09:44:52Z`
 - **Python Version**: `3.13.7`
 - **Platform**: `Windows-11-10.0.26200-SP0`
 - **NumPy Version**: `2.4.4` | **pandas**: `2.3.3` | **scikit-learn**: `1.8.0`

@@ -177,6 +177,12 @@ def test_list_cases_filtering(client):
     assert r_sub.json()["total_count"] == 1
     assert r_sub.json()["items"][0]["case_id"] == "case_cq_002"
 
+    # Retry count filter: retry_count=1
+    r_retry = client.get("/api/v1/recovery/cases?retry_count=1")
+    assert r_retry.status_code == 200
+    assert r_retry.json()["total_count"] == 1
+    assert r_retry.json()["items"][0]["case_id"] == "case_cq_002"
+
     # Search filter: customer_id substring
     r_search = client.get("/api/v1/recovery/cases?search=gamma")
     assert r_search.status_code == 200

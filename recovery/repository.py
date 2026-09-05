@@ -1181,6 +1181,7 @@ class RecoveryRepository:
         action: Optional[str] = None,
         failure_type: Optional[str] = None,
         is_subscription: Optional[bool] = None,
+        retry_count: Optional[int] = None,
         search: Optional[str] = None,
     ) -> Tuple[List[RecoveryCaseRecord], int]:
         """
@@ -1208,6 +1209,9 @@ class RecoveryRepository:
         if is_subscription is not None:
             clauses.append("c.is_subscription = ?")
             params.append(1 if is_subscription else 0)
+        if retry_count is not None:
+            clauses.append("c.retry_count = ?")
+            params.append(retry_count)
         if search:
             clauses.append("(c.case_id LIKE ? OR c.customer_id LIKE ?)")
             search_param = f"%{search}%"

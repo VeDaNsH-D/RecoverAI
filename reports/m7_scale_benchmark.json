@@ -20,78 +20,63 @@
     "model_source": "models/champion_recovery_model.pkl"
   },
   "performance": {
-    "total_elapsed_ms": 45739.22,
-    "throughput_cases_per_sec": 21.9,
+    "total_elapsed_ms": 1807.16,
+    "throughput_cases_per_sec": 553.4,
     "memory": {
       "baseline_memory_mb": 0.0,
-      "peak_memory_mb": 6.29,
-      "incremental_memory_mb": 6.29,
-      "memory_per_case_kb": 6.438
+      "peak_memory_mb": 5.82,
+      "incremental_memory_mb": 5.82,
+      "memory_per_case_kb": 5.958
     },
     "stage_timings": {
       "workload_generation": {
         "stage_name": "workload_generation",
-        "elapsed_ms": 1713.56,
-        "throughput_cases_per_sec": 583.6,
-        "mean_ms_per_case": 1.71356
+        "elapsed_ms": 1485.41,
+        "throughput_cases_per_sec": 673.2,
+        "mean_ms_per_case": 1.48541
       },
       "model_resolution": {
         "stage_name": "model_resolution",
-        "elapsed_ms": 10.71,
-        "throughput_cases_per_sec": 93394.2,
-        "mean_ms_per_case": 0.01071
+        "elapsed_ms": 6.22,
+        "throughput_cases_per_sec": 160792.4,
+        "mean_ms_per_case": 0.00622
       },
       "feature_extraction": {
         "stage_name": "feature_extraction",
-        "elapsed_ms": 69.31,
-        "throughput_cases_per_sec": 14428.0,
-        "mean_ms_per_case": 0.06931
+        "elapsed_ms": 68.16,
+        "throughput_cases_per_sec": 14672.1,
+        "mean_ms_per_case": 0.06816
       },
       "model_inference": {
         "stage_name": "model_inference",
-        "elapsed_ms": 92.15,
-        "throughput_cases_per_sec": 10852.3,
-        "mean_ms_per_case": 0.09215
+        "elapsed_ms": 84.48,
+        "throughput_cases_per_sec": 11836.9,
+        "mean_ms_per_case": 0.08448
       },
       "decision_selection": {
         "stage_name": "decision_selection",
-        "elapsed_ms": 2.7,
-        "throughput_cases_per_sec": 369726.8,
-        "mean_ms_per_case": 0.0027
-      },
-      "inference_comparison_benchmark": {
-        "stage_name": "inference_comparison_benchmark",
-        "elapsed_ms": 43664.01,
-        "throughput_cases_per_sec": 22.9,
-        "mean_ms_per_case": 43.66401
+        "elapsed_ms": 3.41,
+        "throughput_cases_per_sec": 293410.0,
+        "mean_ms_per_case": 0.00341
       },
       "outcome_simulation": {
         "stage_name": "outcome_simulation",
-        "elapsed_ms": 63.98,
-        "throughput_cases_per_sec": 15630.2,
-        "mean_ms_per_case": 0.06398
+        "elapsed_ms": 40.06,
+        "throughput_cases_per_sec": 24961.7,
+        "mean_ms_per_case": 0.04006
       },
       "customer_bootstrap": {
         "stage_name": "customer_bootstrap",
-        "elapsed_ms": 71.71,
-        "throughput_cases_per_sec": 13945.5,
-        "mean_ms_per_case": 0.07171
+        "elapsed_ms": 74.25,
+        "throughput_cases_per_sec": 13467.7,
+        "mean_ms_per_case": 0.07425
       },
       "subgroup_analysis": {
         "stage_name": "subgroup_analysis",
-        "elapsed_ms": 51.09,
-        "throughput_cases_per_sec": 19571.9,
-        "mean_ms_per_case": 0.05109
+        "elapsed_ms": 45.17,
+        "throughput_cases_per_sec": 22140.0,
+        "mean_ms_per_case": 0.04517
       }
-    },
-    "batch_vs_single_comparison": {
-      "single_total_ms": 43528.69,
-      "single_throughput_cases_per_sec": 11.5,
-      "single_latency_ms_per_case": 87.0574,
-      "batch_total_ms": 135.18,
-      "batch_throughput_cases_per_sec": 3698.9,
-      "batch_latency_ms_per_case": 0.2704,
-      "speedup_factor": 322.01
     }
   },
   "policies": {
@@ -461,7 +446,7 @@
   },
   "reproducibility": {
     "benchmark_version": "1.0.0",
-    "timestamp": "2026-09-05T09:36:11Z",
+    "timestamp": "2026-09-05T09:44:52Z",
     "python_version": "3.13.7",
     "platform": "Windows-11-10.0.26200-SP0",
     "numpy_version": "2.4.4",

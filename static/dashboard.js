@@ -174,13 +174,13 @@
     const container = document.getElementById("funnelContainer");
     if (!container) return;
 
-    const baseCount = Math.max(1, data.total_cases);
+    const baseCount = Math.max(1, data.funnel?.cases_at_risk ?? data.total_cases);
     const stages = [
-      { name: "1. Cases at Risk", count: data.total_cases, color: "#6366f1" },
-      { name: "2. Decisions Made", count: data.decisions_made, color: "#8b5cf6" },
-      { name: "3. Actions Dispatched", count: data.actions_attempted, color: "#0ea5e9" },
-      { name: "4. Executions Succeeded", count: data.actions_executed, color: "#06b6d4" },
-      { name: "5. Recovered Outcomes", count: data.recovered_cases, color: "#10b981" },
+      { name: "1. Cases at Risk", count: data.funnel?.cases_at_risk ?? data.total_cases, color: "#6366f1" },
+      { name: "2. Decisions Evaluated", count: data.funnel?.decisions_evaluated ?? data.decisions_made, color: "#8b5cf6" },
+      { name: "3. Interventions Dispatched", count: data.funnel?.interventions_dispatched ?? data.actions_attempted, color: "#0ea5e9" },
+      { name: "4. Successful Executions", count: data.funnel?.successful_executions ?? data.actions_executed, color: "#06b6d4" },
+      { name: "5. Recovered Outcomes", count: data.funnel?.recovered_outcomes ?? data.recovered_cases, color: "#10b981" },
     ];
 
     let html = "";

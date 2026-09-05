@@ -98,6 +98,7 @@ async def list_recovery_cases(
     action: Optional[RecoveryAction] = Query(None, description="Filter by recommended action"),
     failure_type: Optional[FailureType] = Query(None, description="Filter by diagnosed failure type"),
     is_subscription: Optional[bool] = Query(None, description="Filter by subscription status"),
+    retry_count: Optional[int] = Query(None, ge=0, description="Filter by retry count"),
     search: Optional[str] = Query(None, min_length=1, max_length=100, description="Search case ID or customer ID"),
 ):
     """
@@ -115,6 +116,7 @@ async def list_recovery_cases(
         action=act_val,
         failure_type=ft_val,
         is_subscription=is_subscription,
+        retry_count=retry_count,
         search=search,
     )
 
