@@ -321,29 +321,93 @@
 
     const baseCount = Math.max(funnel.cases_at_risk, 1);
     const stages = [
-      { name: "01. AT RISK", count: funnel.cases_at_risk, amount: data.total_amount_at_risk_paise, pct: 100, color: "#f59e0b" },
-      { name: "02. DECIDED", count: funnel.decisions_evaluated, amount: null, pct: (funnel.decisions_evaluated / baseCount) * 100, color: "#06b6d4" },
-      { name: "03. ACTIONED", count: funnel.interventions_dispatched, amount: null, pct: (funnel.interventions_dispatched / baseCount) * 100, color: "#3b82f6" },
-      { name: "04. SETTLED", count: funnel.successful_executions, amount: null, pct: (funnel.successful_executions / baseCount) * 100, color: "#8b5cf6" },
-      { name: "05. RECOVERED", count: funnel.recovered_outcomes, amount: data.gross_recovered_paise, pct: (funnel.recovered_outcomes / baseCount) * 100, color: "#10b981" },
+      {
+        num: "01",
+        name: "AT RISK",
+        desc: "Total Detected Failures",
+        count: funnel.cases_at_risk,
+        amount: data.total_amount_at_risk_paise,
+        pct: 100,
+        gradient: "linear-gradient(90deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%)",
+        borderColor: "rgba(245, 158, 11, 0.35)",
+        textColor: "text-amber",
+      },
+      {
+        num: "02",
+        name: "DECIDED",
+        desc: "ML Uplift Evaluated",
+        count: funnel.decisions_evaluated,
+        amount: null,
+        pct: (funnel.decisions_evaluated / baseCount) * 100,
+        gradient: "linear-gradient(90deg, #0284c7 0%, #06b6d4 50%, #38bdf8 100%)",
+        borderColor: "rgba(6, 182, 212, 0.35)",
+        textColor: "text-cyan",
+      },
+      {
+        num: "03",
+        name: "ACTIONED",
+        desc: "Interventions Dispatched",
+        count: funnel.interventions_dispatched,
+        amount: null,
+        pct: (funnel.interventions_dispatched / baseCount) * 100,
+        gradient: "linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%)",
+        borderColor: "rgba(59, 130, 246, 0.35)",
+        textColor: "text-bright",
+      },
+      {
+        num: "04",
+        name: "SETTLED",
+        desc: "Invoice Proof Verified",
+        count: funnel.successful_executions,
+        amount: null,
+        pct: (funnel.successful_executions / baseCount) * 100,
+        gradient: "linear-gradient(90deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%)",
+        borderColor: "rgba(139, 92, 246, 0.35)",
+        textColor: "text-violet",
+      },
+      {
+        num: "05",
+        name: "RECOVERED",
+        desc: "Net Revenue Attributed",
+        count: funnel.recovered_outcomes,
+        amount: data.recoverai_gross_recovered_paise || data.gross_recovered_paise,
+        pct: (funnel.recovered_outcomes / baseCount) * 100,
+        gradient: "linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%)",
+        borderColor: "rgba(16, 185, 129, 0.35)",
+        textColor: "text-emerald",
+      },
     ];
 
-    let html = "";
+    let html = `<div class="funnel-rows-wrapper">`;
     stages.forEach((s) => {
-      const widthPct = Math.max(10, Math.min(100, s.pct));
-      const amountLabel = s.amount !== null ? ` • ${formatPaiseINR(s.amount)}` : "";
+      const widthPct = Math.max(8, Math.min(100, s.pct));
+      const amountStr = s.amount !== null ? ` • ${formatPaiseINR(s.amount)}` : "";
+      const retentionPct = s.pct.toFixed(1);
+
       html += `
-        <div style="display:grid;grid-template-columns:110px 1fr 180px;gap:0.85rem;align-items:center;margin-bottom:0.65rem;">
-          <div class="mono text-xs font-bold text-dim text-right">${s.name}</div>
-          <div style="background:rgba(148,163,184,0.08);border-radius:var(--radius-sm);height:26px;overflow:hidden;border:1px solid var(--border-subtle);">
-            <div style="height:100%;width:${widthPct}%;background:${s.color};display:flex;align-items:center;padding-left:0.75rem;color:#ffffff;font-family:var(--font-mono);font-size:0.7rem;font-weight:700;">
-              ${s.count} (${s.pct.toFixed(1)}%)
+        <div class="funnel-stage-row">
+          <!-- Stage Identity -->
+          <div class="funnel-stage-meta">
+            <span class="funnel-stage-badge ${s.textColor}">${s.num}. ${s.name}</span>
+            <span class="funnel-stage-desc">${s.desc}</span>
+          </div>
+
+          <!-- Progress Track -->
+          <div class="funnel-bar-track">
+            <div class="funnel-bar-fill" style="width:${widthPct}%;background:${s.gradient};box-shadow:0 0 15px ${s.borderColor};">
+              <span class="funnel-bar-count-pill mono">${s.count} <span class="funnel-bar-pct">(${retentionPct}%)</span></span>
             </div>
           </div>
-          <div class="mono font-bold text-xs text-bright text-right">${s.count} cases ${amountLabel}</div>
+
+          <!-- Financial / Case Counts -->
+          <div class="funnel-stage-metrics">
+            <div class="funnel-metrics-primary mono">${s.count} cases${amountStr}</div>
+            <div class="funnel-metrics-sub mono text-dim">${retentionPct}% retention</div>
+          </div>
         </div>
       `;
     });
+    html += `</div>`;
     container.innerHTML = html;
   }
 
@@ -588,8 +652,25 @@
     }
   }
 
+  function filterByStage(stage) {
+    switchView("view-queue");
+    const filterStateEl = document.getElementById("filterState");
+    if (!filterStateEl) return;
+    if (stage === "at_risk") {
+      filterStateEl.value = "";
+    } else if (stage === "decided") {
+      filterStateEl.value = "DECIDED";
+    } else if (stage === "actioned") {
+      filterStateEl.value = "ACTION_EXECUTED";
+    } else if (stage === "settled" || stage === "recovered") {
+      filterStateEl.value = "RECOVERED";
+    }
+    document.getElementById("applyFiltersBtn")?.click();
+  }
+
   window.inspectCase = inspectCase;
   window.switchView = switchView;
+  window.filterByStage = filterByStage;
 
   function init() {
     // 1. Navigation Tab View Switchers
@@ -597,6 +678,14 @@
       btn.addEventListener("click", () => {
         const v = btn.getAttribute("data-view");
         switchView(v);
+      });
+    });
+
+    // 1b. Pipeline Stage Cards (Quick-Filter to Queue)
+    document.querySelectorAll(".pipeline-stage-card[data-stage]").forEach((card) => {
+      card.addEventListener("click", () => {
+        const stage = card.getAttribute("data-stage");
+        filterByStage(stage);
       });
     });
 

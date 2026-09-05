@@ -281,6 +281,12 @@ def test_static_dashboard_route_and_root_redirect(client):
     assert resp_root.status_code == 307
     assert resp_root.headers["location"] == "/dashboard"
 
+    # 3. Landing Page
+    resp_landing = client.get("/landing")
+    assert resp_landing.status_code == 200
+    assert "RecoverAI" in resp_landing.text
+    assert "Transform failed payments" in resp_landing.text
+
 
 def test_dashboard_overview_date_validation(client):
     """Verifies rejection of invalid date ranges with 422."""

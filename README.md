@@ -4,6 +4,19 @@
 
 Built for the **Razorpay Buildathon (Track 03: AI Revenue Recovery)**.
 
+<p align="center">
+  <img src="assets/landing_hero.png" alt="RecoverAI Landing Page Hero" width="100%" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.13-blue.svg" alt="Python 3.13" />
+  <img src="https://img.shields.io/badge/FastAPI-Production%20API-009688.svg" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Razorpay-TEST%20MODE-0c8ce9.svg" alt="Razorpay Integration" />
+  <img src="https://img.shields.io/badge/Tests-186%20Passed%20(100%25)-success.svg" alt="186 Tests Passed" />
+  <img src="https://img.shields.io/badge/Causal%20Uplift-%2B8.93%25%20Net-emerald.svg" alt="Causal Uplift +8.93%" />
+  <img src="https://img.shields.io/badge/Latent%20Leakage-0.00%20(Verified)-brightgreen.svg" alt="Zero Leakage" />
+</p>
+
 ---
 
 ## 1. Overview & Problem
@@ -80,7 +93,56 @@ Standard industry recovery approaches rely on crude heuristics:
 
 ---
 
-## 3. Benchmark Results on Held-Out Test Set (1,500 Cases)
+## 3. Visual Interface & Merchant Command Center
+
+RecoverAI provides a dual-surface experience: a **High-Converting Product Landing Page** (`/landing`) and an **Autonomous Merchant Recovery Command Center** (`/dashboard`), built in pure Vanilla ES6+ and Dark Glassmorphism with zero external frontend build dependencies.
+
+### A. Product Landing Page (`GET /landing`)
+The landing page introduces merchants to the 5-stage causal lifecycle, live recovery benchmarks, and the 6-pillar production architecture.
+
+<p align="center">
+  <img src="assets/landing_hero.png" alt="RecoverAI Landing Hero Banner" width="100%" />
+</p>
+
+---
+
+### B. Causal Recovery Pipeline View (`GET /dashboard` — View 1)
+Real-time 5-stage deterministic lifecycle tracking (`DETECT` → `DECIDE` → `ACT` → `OBSERVE` → `ATTRIBUTE`), executive KPI strip with isolated baseline accounting, and live recovery event feed. Clicking any stage card instantly filters the Recovery Queue.
+
+<p align="center">
+  <img src="assets/dashboard_pipeline.png" alt="Causal Recovery Pipeline View" width="100%" />
+</p>
+
+---
+
+### C. High-Density Recovery Queue & Deep Case Inspection Drawer (`GET /dashboard` — View 2)
+Filterable tabular ledger with multi-parameter search (State, Action, Failure Type, Segment). The slide-out deep inspection drawer reveals real-time recovery probability gauges, 2x2 integer paise financial metrics, candidate action evaluation matrices, and full AI policy rationale.
+
+<p align="center">
+  <img src="assets/dashboard_queue_drawer.png" alt="Recovery Queue & Deep Case Inspection Drawer" width="100%" />
+</p>
+
+---
+
+### D. Analytics & 5-Stage Conversion Funnel (`GET /dashboard` — View 3)
+End-to-end conversion telemetry visualizing stage retention from initial failure detection to net attributed recovery, paired with time-series settled recovery yield charts.
+
+<p align="center">
+  <img src="assets/dashboard_analytics_funnel.png" alt="Analytics & 5-Stage Recovery Funnel" width="100%" />
+</p>
+
+---
+
+### E. Enterprise Technology & Architecture Stack
+Six-pillar modular architecture designed for high throughput, sub-50ms inference latency, strict financial precision in integer paise, and zero ground-truth data leakage.
+
+<p align="center">
+  <img src="assets/landing_tech_stack.png" alt="Enterprise Technology Stack" width="100%" />
+</p>
+
+---
+
+## 4. Benchmark Results on Held-Out Test Set (1,500 Cases)
 
 Evaluated under **Common Random Numbers (CRN)** on the frozen `sim_v1` held-out test split (1,500 unseen cases across 300 unseen customers, **₹4,065,306.00 at risk**):
 
@@ -102,7 +164,7 @@ Evaluated under **Common Random Numbers (CRN)** on the frozen `sim_v1` held-out 
 
 ---
 
-## 4. Quickstart & CLI Commands
+## 5. Quickstart & CLI Commands
 
 ### A. Run Merchant API Server
 Start the production-ready FastAPI recovery decision and operations service:
@@ -146,9 +208,9 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (128 Tests)
+### D. Run Full Test Suite (186 Tests)
 ```bash
-python -m pytest tests/ -v
+python -m pytest
 ```
 
 ### E. Run Validation Decision Diagnostics
@@ -172,7 +234,7 @@ python scripts/run_scale_benchmark.py --profile smoke --compare-single-batch
 
 ---
 
-## 5. Repository Structure
+## 6. Repository Structure
 
 ```
 recoverai/
@@ -222,7 +284,9 @@ recoverai/
 │   ├── SCALE_EVALUATION.md     # Milestone 7 scale evaluation, vectorization & bootstrap framework
 │   ├── SUBSCRIPTION_RECOVERY.md# Milestone 8 subscription recovery, billing cycles & attribution
 │   └── DASHBOARD.md            # Milestone 9 Merchant Recovery Command Center guide
-├── static/                     # Merchant Recovery Command Center UI (SPA: HTML5, CSS, JS)
+├── static/                     # Merchant Recovery Command Center & Landing Page (HTML5, CSS, JS)
+│   ├── landing.html            # High-converting product landing page
+│   ├── landing.css             # Obsidian & Razorpay blue radiant stylesheet
 │   ├── index.html              # Command Center single-page dashboard
 │   ├── dashboard.css           # Modern, zero-dependency slate/dark stylesheet
 │   └── dashboard.js            # Pure ES6 client with SVG funnel/donut visualizations
@@ -272,12 +336,12 @@ recoverai/
 │   ├── smoke_test_llm_agent.py # Live HTTP LLM tool-calling agent smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 150+ unit, integration, security, equivalence, bootstrap, scale & subscription tests
+└── tests/                      # 186 unit, integration, security, equivalence, bootstrap, scale & subscription tests (100% passing)
 ```
 
 ---
 
-## 6. Core Scientific & Engineering Principles
+## 7. Core Scientific & Engineering Principles
 
 1. **Exact Financial Calculations (Integer Paise)**: All internal monetary quantities (`amount_paise`, `recovered_amount_paise`, `intervention_cost_paise`, `expected_net_paise`) are strictly 64-bit integers.
 2. **Zero Ground-Truth Leakage Guarantee**: The API and inference path ingest only observable `PaymentCase` fields. Any unauthorized token (`latent_intent`, `latent_funds`, `optimal_action`, `actual_outcome`) immediately raises a `DataLeakageError` or `422 Unprocessable Entity`.

@@ -11,7 +11,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.config import settings
@@ -344,6 +344,14 @@ def create_app() -> FastAPI:
     # Root redirect to Command Center dashboard
     @app.get("/", include_in_schema=False)
     async def root_redirect():
+        return RedirectResponse(url="/dashboard", status_code=307)
+
+    # Landing page
+    @app.get("/landing", include_in_schema=False)
+    async def landing_page():
+        landing_file = Path("static/landing.html")
+        if landing_file.exists():
+            return FileResponse(landing_file)
         return RedirectResponse(url="/dashboard", status_code=307)
 
     # Static assets for Merchant Recovery Command Center UI
