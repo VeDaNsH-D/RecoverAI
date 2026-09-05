@@ -30,3 +30,6 @@ htmlcov/
 data/
 experiments/
 *.log
+
+# Large media assets
+assets/*.mp4
