@@ -174,15 +174,20 @@ body {
   gap: 0.85rem;
 }
 
-.brand-logo-icon {
-  width: 32px;
-  height: 32px;
+.brand-logo-img {
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #0c8ce9 0%, #0284c7 60%, #0369a1 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 14px var(--razor-blue-glow);
+  object-fit: cover;
+  box-shadow: 0 0 16px var(--razor-blue-glow);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: block;
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.6);
 }
 
 .brand-info {
