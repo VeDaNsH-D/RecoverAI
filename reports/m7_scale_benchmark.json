@@ -1,17 +1,17 @@
 {
-  "benchmark_id": "scale_benchmark_standard_10000_42",
+  "benchmark_id": "scale_benchmark_smoke_1000_42",
   "dataset_metadata": {
-    "profile": "standard",
-    "num_cases": 10000,
-    "num_customers": 2000,
-    "total_revenue_at_risk_paise": 2600770000,
-    "total_revenue_at_risk_inr": 26007700.0,
+    "profile": "smoke",
+    "num_cases": 1000,
+    "num_customers": 200,
+    "total_revenue_at_risk_paise": 279883800,
+    "total_revenue_at_risk_inr": 2798838.0,
     "seed": 42
   },
   "configuration": {
-    "profile": "standard",
-    "num_cases": 10000,
-    "num_customers": 2000,
+    "profile": "smoke",
+    "num_cases": 1000,
+    "num_customers": 200,
     "seed": 42,
     "batch_size": 1024,
     "enable_bootstrap": true,
@@ -20,99 +20,114 @@
     "model_source": "models/champion_recovery_model.pkl"
   },
   "performance": {
-    "total_elapsed_ms": 18920.5,
-    "throughput_cases_per_sec": 528.5,
+    "total_elapsed_ms": 45739.22,
+    "throughput_cases_per_sec": 21.9,
     "memory": {
       "baseline_memory_mb": 0.0,
-      "peak_memory_mb": 54.82,
-      "incremental_memory_mb": 54.82,
-      "memory_per_case_kb": 5.613
+      "peak_memory_mb": 6.29,
+      "incremental_memory_mb": 6.29,
+      "memory_per_case_kb": 6.438
     },
     "stage_timings": {
       "workload_generation": {
         "stage_name": "workload_generation",
-        "elapsed_ms": 15461.12,
-        "throughput_cases_per_sec": 646.8,
-        "mean_ms_per_case": 1.54611
+        "elapsed_ms": 1713.56,
+        "throughput_cases_per_sec": 583.6,
+        "mean_ms_per_case": 1.71356
       },
       "model_resolution": {
         "stage_name": "model_resolution",
-        "elapsed_ms": 6.05,
-        "throughput_cases_per_sec": 1651991.5,
-        "mean_ms_per_case": 0.00061
+        "elapsed_ms": 10.71,
+        "throughput_cases_per_sec": 93394.2,
+        "mean_ms_per_case": 0.01071
       },
       "feature_extraction": {
         "stage_name": "feature_extraction",
-        "elapsed_ms": 966.45,
-        "throughput_cases_per_sec": 10347.2,
-        "mean_ms_per_case": 0.09664
+        "elapsed_ms": 69.31,
+        "throughput_cases_per_sec": 14428.0,
+        "mean_ms_per_case": 0.06931
       },
       "model_inference": {
         "stage_name": "model_inference",
-        "elapsed_ms": 169.65,
-        "throughput_cases_per_sec": 58945.4,
-        "mean_ms_per_case": 0.01696
+        "elapsed_ms": 92.15,
+        "throughput_cases_per_sec": 10852.3,
+        "mean_ms_per_case": 0.09215
       },
       "decision_selection": {
         "stage_name": "decision_selection",
-        "elapsed_ms": 34.8,
-        "throughput_cases_per_sec": 287344.8,
-        "mean_ms_per_case": 0.00348
+        "elapsed_ms": 2.7,
+        "throughput_cases_per_sec": 369726.8,
+        "mean_ms_per_case": 0.0027
+      },
+      "inference_comparison_benchmark": {
+        "stage_name": "inference_comparison_benchmark",
+        "elapsed_ms": 43664.01,
+        "throughput_cases_per_sec": 22.9,
+        "mean_ms_per_case": 43.66401
       },
       "outcome_simulation": {
         "stage_name": "outcome_simulation",
-        "elapsed_ms": 973.83,
-        "throughput_cases_per_sec": 10268.7,
-        "mean_ms_per_case": 0.09738
+        "elapsed_ms": 63.98,
+        "throughput_cases_per_sec": 15630.2,
+        "mean_ms_per_case": 0.06398
       },
       "customer_bootstrap": {
         "stage_name": "customer_bootstrap",
-        "elapsed_ms": 679.47,
-        "throughput_cases_per_sec": 14717.4,
-        "mean_ms_per_case": 0.06795
+        "elapsed_ms": 71.71,
+        "throughput_cases_per_sec": 13945.5,
+        "mean_ms_per_case": 0.07171
       },
       "subgroup_analysis": {
         "stage_name": "subgroup_analysis",
-        "elapsed_ms": 629.13,
-        "throughput_cases_per_sec": 15895.0,
-        "mean_ms_per_case": 0.06291
+        "elapsed_ms": 51.09,
+        "throughput_cases_per_sec": 19571.9,
+        "mean_ms_per_case": 0.05109
       }
+    },
+    "batch_vs_single_comparison": {
+      "single_total_ms": 43528.69,
+      "single_throughput_cases_per_sec": 11.5,
+      "single_latency_ms_per_case": 87.0574,
+      "batch_total_ms": 135.18,
+      "batch_throughput_cases_per_sec": 3698.9,
+      "batch_latency_ms_per_case": 0.2704,
+      "speedup_factor": 322.01
     }
   },
   "policies": {
     "No Action": {
       "policy_name": "No Action",
-      "total_cases": 10000,
-      "total_revenue_at_risk_paise": 2600770000,
-      "gross_recovered_paise": 66249800,
+      "total_cases": 1000,
+      "total_revenue_at_risk_paise": 279883800,
+      "gross_recovered_paise": 5069000,
       "intervention_cost_paise": 0,
-      "net_recovered_paise": 66249800,
-      "delta_vs_rule_baseline_paise": -1657987700,
-      "regret_vs_oracle_paise": 1768455000,
-      "oracle_headroom_captured_pct": -1500.89,
-      "recovered_cases": 234,
-      "recovery_rate": 0.0234,
+      "net_recovered_paise": 5069000,
+      "delta_vs_rule_baseline_paise": -175580700,
+      "regret_vs_oracle_paise": 199932600,
+      "oracle_headroom_captured_pct": -721.01,
+      "recovered_cases": 23,
+      "recovery_rate": 0.023,
       "intervened_cases": 0,
       "intervention_rate": 0.0,
       "escalated_cases": 0,
       "escalation_rate": 0.0,
-      "intervention_efficiency": 234.0,
+      "intervention_efficiency": 23.0,
       "action_counts": {
-        "no_action": 10000
+        "no_action": 1000
       },
       "ci_net_recovered_inr": {
-        "lower": 528867.53,
-        "upper": 799206.35,
+        "lower": 26980.78,
+        "upper": 79228.27,
         "confidence_level": 0.95
       },
       "ci_delta_vs_rule_inr": {
-        "lower": -17802580.1,
-        "upper": -15398260.62,
+        "lower": -2302744.23,
+        "upper": -1319245.13,
         "confidence_level": 0.95
       },
       "ci_recovery_rate_pct": {
-        "lower": 2.03,
-        "upper": 2.66,
+        "lower": 1.36,
+        "upper": 3.34,
         "confidence_level": 0.95
       },
       "ci_cost_inr": {
@@ -123,129 +138,129 @@
     },
     "Rule Baseline": {
       "policy_name": "Rule Baseline",
-      "total_cases": 10000,
-      "total_revenue_at_risk_paise": 2600770000,
-      "gross_recovered_paise": 1736546300,
-      "intervention_cost_paise": 12308800,
-      "net_recovered_paise": 1724237500,
+      "total_cases": 1000,
+      "total_revenue_at_risk_paise": 279883800,
+      "gross_recovered_paise": 181917700,
+      "intervention_cost_paise": 1268000,
+      "net_recovered_paise": 180649700,
       "delta_vs_rule_baseline_paise": 0,
-      "regret_vs_oracle_paise": 110467300,
+      "regret_vs_oracle_paise": 24351900,
       "oracle_headroom_captured_pct": 0.0,
-      "recovered_cases": 6715,
-      "recovery_rate": 0.6715,
-      "intervened_cases": 10000,
+      "recovered_cases": 660,
+      "recovery_rate": 0.66,
+      "intervened_cases": 1000,
       "intervention_rate": 1.0,
-      "escalated_cases": 1337,
-      "escalation_rate": 0.1337,
-      "intervention_efficiency": 0.6715,
+      "escalated_cases": 144,
+      "escalation_rate": 0.144,
+      "intervention_efficiency": 0.66,
       "action_counts": {
-        "retry": 3799,
-        "payment_link": 4864,
-        "escalate": 1337
+        "retry": 385,
+        "payment_link": 471,
+        "escalate": 144
       },
       "ci_net_recovered_inr": {
-        "lower": 15977005.8,
-        "upper": 18480133.62,
+        "lower": 1360216.15,
+        "upper": 2341461.47,
         "confidence_level": 0.95
       },
       "ci_delta_vs_rule_inr": null,
       "ci_recovery_rate_pct": {
-        "lower": 66.24,
-        "upper": 68.06,
+        "lower": 62.94,
+        "upper": 69.05,
         "confidence_level": 0.95
       },
       "ci_cost_inr": {
-        "lower": 117462.25,
-        "upper": 129096.95,
+        "lower": 10716.3,
+        "upper": 14663.55,
         "confidence_level": 0.95
       }
     },
     "Logistic Decision Engine (Champion)": {
       "policy_name": "Logistic Decision Engine (Champion)",
-      "total_cases": 10000,
-      "total_revenue_at_risk_paise": 2600770000,
-      "gross_recovered_paise": 1823466500,
-      "intervention_cost_paise": 16608900,
-      "net_recovered_paise": 1806857600,
-      "delta_vs_rule_baseline_paise": 82620100,
-      "regret_vs_oracle_paise": 27847200,
-      "oracle_headroom_captured_pct": 74.79,
-      "recovered_cases": 6948,
-      "recovery_rate": 0.6948,
-      "intervened_cases": 10000,
+      "total_cases": 1000,
+      "total_revenue_at_risk_paise": 279883800,
+      "gross_recovered_paise": 200993400,
+      "intervention_cost_paise": 1845700,
+      "net_recovered_paise": 199147700,
+      "delta_vs_rule_baseline_paise": 18498000,
+      "regret_vs_oracle_paise": 5853900,
+      "oracle_headroom_captured_pct": 75.96,
+      "recovered_cases": 698,
+      "recovery_rate": 0.698,
+      "intervened_cases": 1000,
       "intervention_rate": 1.0,
-      "escalated_cases": 2293,
-      "escalation_rate": 0.2293,
-      "intervention_efficiency": 0.6948,
+      "escalated_cases": 273,
+      "escalation_rate": 0.273,
+      "intervention_efficiency": 0.698,
       "action_counts": {
-        "retry": 2787,
-        "payment_link": 4253,
-        "reminder": 667,
-        "escalate": 2293
+        "payment_link": 403,
+        "escalate": 273,
+        "retry": 281,
+        "reminder": 43
       },
       "ci_net_recovered_inr": {
-        "lower": 16700175.75,
-        "upper": 19394842.3,
+        "lower": 1466328.63,
+        "upper": 2666726.57,
         "confidence_level": 0.95
       },
       "ci_delta_vs_rule_inr": {
-        "lower": 566808.25,
-        "upper": 1100625.35,
+        "lower": 45631.55,
+        "upper": 382065.22,
         "confidence_level": 0.95
       },
       "ci_recovery_rate_pct": {
-        "lower": 68.57,
-        "upper": 70.34,
+        "lower": 66.75,
+        "upper": 72.79,
         "confidence_level": 0.95
       },
       "ci_cost_inr": {
-        "lower": 157402.85,
-        "upper": 173964.45,
+        "lower": 15151.1,
+        "upper": 22173.83,
         "confidence_level": 0.95
       }
     },
     "Oracle (Benchmark Ceiling)": {
       "policy_name": "Oracle (Benchmark Ceiling)",
-      "total_cases": 10000,
-      "total_revenue_at_risk_paise": 2600770000,
-      "gross_recovered_paise": 1849828100,
-      "intervention_cost_paise": 15123300,
-      "net_recovered_paise": 1834704800,
-      "delta_vs_rule_baseline_paise": 110467300,
+      "total_cases": 1000,
+      "total_revenue_at_risk_paise": 279883800,
+      "gross_recovered_paise": 206658000,
+      "intervention_cost_paise": 1656400,
+      "net_recovered_paise": 205001600,
+      "delta_vs_rule_baseline_paise": 24351900,
       "regret_vs_oracle_paise": 0,
       "oracle_headroom_captured_pct": 100.0,
-      "recovered_cases": 7057,
-      "recovery_rate": 0.7057,
-      "intervened_cases": 8820,
-      "intervention_rate": 0.882,
-      "escalated_cases": 2151,
-      "escalation_rate": 0.2151,
-      "intervention_efficiency": 0.8001,
+      "recovered_cases": 723,
+      "recovery_rate": 0.723,
+      "intervened_cases": 886,
+      "intervention_rate": 0.886,
+      "escalated_cases": 247,
+      "escalation_rate": 0.247,
+      "intervention_efficiency": 0.816,
       "action_counts": {
-        "retry": 2449,
-        "payment_link": 3537,
-        "no_action": 1180,
-        "reminder": 683,
-        "escalate": 2151
+        "payment_link": 349,
+        "retry": 242,
+        "no_action": 114,
+        "escalate": 247,
+        "reminder": 48
       },
       "ci_net_recovered_inr": {
-        "lower": 17005315.0,
-        "upper": 19763830.05,
+        "lower": 1555901.43,
+        "upper": 2679755.57,
         "confidence_level": 0.95
       },
       "ci_delta_vs_rule_inr": {
-        "lower": 805714.28,
-        "upper": 1405549.22,
+        "lower": 132758.08,
+        "upper": 391683.65,
         "confidence_level": 0.95
       },
       "ci_recovery_rate_pct": {
-        "lower": 69.79,
-        "upper": 71.48,
+        "lower": 69.5,
+        "upper": 75.15,
         "confidence_level": 0.95
       },
       "ci_cost_inr": {
-        "lower": 143402.85,
-        "upper": 158762.82,
+        "lower": 13762.5,
+        "upper": 19872.22,
         "confidence_level": 0.95
       }
     }
@@ -255,37 +270,37 @@
       "insufficient_funds": {
         "dimension": "failure_type",
         "group_key": "insufficient_funds",
-        "num_cases": 2989,
-        "revenue_at_risk_paise": 759837700,
-        "net_recovered_paise": 515691400,
-        "recovery_rate": 0.6835,
+        "num_cases": 305,
+        "revenue_at_risk_paise": 98445000,
+        "net_recovered_paise": 73060600,
+        "recovery_rate": 0.7148,
         "intervention_rate": 1.0
       },
       "invalid_payment_method": {
         "dimension": "failure_type",
         "group_key": "invalid_payment_method",
-        "num_cases": 2069,
-        "revenue_at_risk_paise": 561357900,
-        "net_recovered_paise": 417088600,
-        "recovery_rate": 0.7284,
+        "num_cases": 187,
+        "revenue_at_risk_paise": 49642500,
+        "net_recovered_paise": 34591400,
+        "recovery_rate": 0.7166,
         "intervention_rate": 1.0
       },
       "temporary_failure": {
         "dimension": "failure_type",
         "group_key": "temporary_failure",
-        "num_cases": 3948,
-        "revenue_at_risk_paise": 1023203800,
-        "net_recovered_paise": 675300000,
-        "recovery_rate": 0.6636,
+        "num_cases": 400,
+        "revenue_at_risk_paise": 104132500,
+        "net_recovered_paise": 70716000,
+        "recovery_rate": 0.665,
         "intervention_rate": 1.0
       },
       "unknown_failure": {
         "dimension": "failure_type",
         "group_key": "unknown_failure",
-        "num_cases": 994,
-        "revenue_at_risk_paise": 256370600,
-        "net_recovered_paise": 198777600,
-        "recovery_rate": 0.7827,
+        "num_cases": 108,
+        "revenue_at_risk_paise": 27663800,
+        "net_recovered_paise": 20779700,
+        "recovery_rate": 0.7407,
         "intervention_rate": 1.0
       }
     },
@@ -293,37 +308,37 @@
       "card": {
         "dimension": "payment_method",
         "group_key": "card",
-        "num_cases": 2962,
-        "revenue_at_risk_paise": 746040400,
-        "net_recovered_paise": 525129300,
-        "recovery_rate": 0.7019,
+        "num_cases": 257,
+        "revenue_at_risk_paise": 78037900,
+        "net_recovered_paise": 58353900,
+        "recovery_rate": 0.7082,
         "intervention_rate": 1.0
       },
       "mandate": {
         "dimension": "payment_method",
         "group_key": "mandate",
-        "num_cases": 851,
-        "revenue_at_risk_paise": 209702100,
-        "net_recovered_paise": 144069200,
-        "recovery_rate": 0.6898,
+        "num_cases": 112,
+        "revenue_at_risk_paise": 47231200,
+        "net_recovered_paise": 35311500,
+        "recovery_rate": 0.7143,
         "intervention_rate": 1.0
       },
       "netbanking": {
         "dimension": "payment_method",
         "group_key": "netbanking",
-        "num_cases": 1617,
-        "revenue_at_risk_paise": 447012800,
-        "net_recovered_paise": 311214400,
-        "recovery_rate": 0.6964,
+        "num_cases": 186,
+        "revenue_at_risk_paise": 54209400,
+        "net_recovered_paise": 34760000,
+        "recovery_rate": 0.6398,
         "intervention_rate": 1.0
       },
       "upi": {
         "dimension": "payment_method",
         "group_key": "upi",
-        "num_cases": 4570,
-        "revenue_at_risk_paise": 1198014700,
-        "net_recovered_paise": 826444700,
-        "recovery_rate": 0.6906,
+        "num_cases": 445,
+        "revenue_at_risk_paise": 100405300,
+        "net_recovered_paise": 70722300,
+        "recovery_rate": 0.7124,
         "intervention_rate": 1.0
       }
     },
@@ -331,37 +346,37 @@
       "retries_0": {
         "dimension": "retry_count",
         "group_key": "retries_0",
-        "num_cases": 6837,
-        "revenue_at_risk_paise": 1772588700,
-        "net_recovered_paise": 1234800300,
-        "recovery_rate": 0.704,
+        "num_cases": 676,
+        "revenue_at_risk_paise": 177119200,
+        "net_recovered_paise": 122650800,
+        "recovery_rate": 0.6923,
         "intervention_rate": 1.0
       },
       "retries_1": {
         "dimension": "retry_count",
         "group_key": "retries_1",
-        "num_cases": 2000,
-        "revenue_at_risk_paise": 528688000,
-        "net_recovered_paise": 344465600,
-        "recovery_rate": 0.6385,
+        "num_cases": 208,
+        "revenue_at_risk_paise": 61609200,
+        "net_recovered_paise": 43445400,
+        "recovery_rate": 0.6779,
         "intervention_rate": 1.0
       },
       "retries_2": {
         "dimension": "retry_count",
         "group_key": "retries_2",
-        "num_cases": 785,
-        "revenue_at_risk_paise": 203178400,
-        "net_recovered_paise": 154805500,
-        "recovery_rate": 0.7427,
+        "num_cases": 77,
+        "revenue_at_risk_paise": 25052500,
+        "net_recovered_paise": 20713100,
+        "recovery_rate": 0.7662,
         "intervention_rate": 1.0
       },
       "retries_3": {
         "dimension": "retry_count",
         "group_key": "retries_3",
-        "num_cases": 378,
-        "revenue_at_risk_paise": 96314900,
-        "net_recovered_paise": 72786200,
-        "recovery_rate": 0.7275,
+        "num_cases": 39,
+        "revenue_at_risk_paise": 16102900,
+        "net_recovered_paise": 12338400,
+        "recovery_rate": 0.7692,
         "intervention_rate": 1.0
       }
     },
@@ -369,19 +384,19 @@
       "one_off": {
         "dimension": "subscription",
         "group_key": "one_off",
-        "num_cases": 7833,
-        "revenue_at_risk_paise": 2051913000,
-        "net_recovered_paise": 1421954000,
-        "recovery_rate": 0.6918,
+        "num_cases": 841,
+        "revenue_at_risk_paise": 197831900,
+        "net_recovered_paise": 135619900,
+        "recovery_rate": 0.6885,
         "intervention_rate": 1.0
       },
       "subscription": {
         "dimension": "subscription",
         "group_key": "subscription",
-        "num_cases": 2167,
-        "revenue_at_risk_paise": 548857000,
-        "net_recovered_paise": 384903600,
-        "recovery_rate": 0.7056,
+        "num_cases": 159,
+        "revenue_at_risk_paise": 82051900,
+        "net_recovered_paise": 63527800,
+        "recovery_rate": 0.7484,
         "intervention_rate": 1.0
       }
     },
@@ -389,37 +404,37 @@
       "1. Micro (< INR 200)": {
         "dimension": "amount_tier",
         "group_key": "1. Micro (< INR 200)",
-        "num_cases": 104,
-        "revenue_at_risk_paise": 1590900,
-        "net_recovered_paise": 956000,
-        "recovery_rate": 0.6538,
+        "num_cases": 6,
+        "revenue_at_risk_paise": 96900,
+        "net_recovered_paise": 60600,
+        "recovery_rate": 0.6667,
         "intervention_rate": 1.0
       },
       "2. Low (INR 200 - 1k)": {
         "dimension": "amount_tier",
         "group_key": "2. Low (INR 200 - 1k)",
-        "num_cases": 2735,
-        "revenue_at_risk_paise": 178567400,
-        "net_recovered_paise": 117997700,
-        "recovery_rate": 0.6775,
+        "num_cases": 222,
+        "revenue_at_risk_paise": 14381500,
+        "net_recovered_paise": 10097500,
+        "recovery_rate": 0.7207,
         "intervention_rate": 1.0
       },
       "3. Mid (INR 1k - 5k)": {
         "dimension": "amount_tier",
         "group_key": "3. Mid (INR 1k - 5k)",
-        "num_cases": 5918,
-        "revenue_at_risk_paise": 1348545000,
-        "net_recovered_paise": 931273000,
-        "recovery_rate": 0.7001,
+        "num_cases": 637,
+        "revenue_at_risk_paise": 144733300,
+        "net_recovered_paise": 96238700,
+        "recovery_rate": 0.6829,
         "intervention_rate": 1.0
       },
       "4. High (> INR 5k)": {
         "dimension": "amount_tier",
         "group_key": "4. High (> INR 5k)",
-        "num_cases": 1243,
-        "revenue_at_risk_paise": 1072066700,
-        "net_recovered_paise": 756630900,
-        "recovery_rate": 0.7112,
+        "num_cases": 135,
+        "revenue_at_risk_paise": 120672100,
+        "net_recovered_paise": 92750900,
+        "recovery_rate": 0.7333,
         "intervention_rate": 1.0
       }
     },
@@ -427,26 +442,26 @@
       "2. Medium (60-80%)": {
         "dimension": "customer_success_tier",
         "group_key": "2. Medium (60-80%)",
-        "num_cases": 2615,
-        "revenue_at_risk_paise": 677070200,
-        "net_recovered_paise": 460616000,
-        "recovery_rate": 0.6795,
+        "num_cases": 331,
+        "revenue_at_risk_paise": 128011100,
+        "net_recovered_paise": 94866200,
+        "recovery_rate": 0.7009,
         "intervention_rate": 1.0
       },
       "3. High (> 80%)": {
         "dimension": "customer_success_tier",
         "group_key": "3. High (> 80%)",
-        "num_cases": 7385,
-        "revenue_at_risk_paise": 1923699800,
-        "net_recovered_paise": 1346241600,
-        "recovery_rate": 0.7002,
+        "num_cases": 669,
+        "revenue_at_risk_paise": 151872700,
+        "net_recovered_paise": 104281500,
+        "recovery_rate": 0.6966,
         "intervention_rate": 1.0
       }
     }
   },
   "reproducibility": {
     "benchmark_version": "1.0.0",
-    "timestamp": "2026-09-05T07:08:01Z",
+    "timestamp": "2026-09-05T09:36:11Z",
     "python_version": "3.13.7",
     "platform": "Windows-11-10.0.26200-SP0",
     "numpy_version": "2.4.4",
