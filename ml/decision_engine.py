@@ -204,6 +204,63 @@ class RecoveryDecisionEngine:
 
         return results
 
+    def select_actions_fast(
+        self,
+        cases: List[PaymentCase],
+        batch_probs: Optional[Dict[RecoveryAction, np.ndarray]] = None,
+    ) -> List[RecoveryAction]:
+        """
+        High-throughput vectorized action selection for scale benchmarking and batch evaluation.
+        Produces mathematically and logically identical chosen actions as evaluate_case(),
+        while eliminating per-case object allocations and redundant dictionary lookups.
+
+        Guarantees:
+            1. Exact integer paise expected net computation: floor(prob * amount_paise) - cost_paise.
+            2. Exact safety constraints matching MAX_RETRY_COUNT_ALLOWED and MIN_AMOUNT_PAISE_FOR_ESCALATE.
+            3. Exact tie-breaking matching canonical ACTION_ORDER priority.
+        """
+        if not cases:
+            return []
+
+        n = len(cases)
+
+        if batch_probs is None:
+            if self.model is None:
+                raise RuntimeError("select_actions_fast requires a fitted MultiActionRecoveryModel or precomputed batch_probs.")
+            X_matrix = self.feature_extractor.transform_cases(cases)
+            batch_probs = self.model.predict_all_positive_probas(X_matrix)
+
+        # Vectorized candidate evaluation
+        # candidate_net has shape (n, 5) corresponding to ACTION_ORDER
+        candidate_net = np.empty((n, len(ACTION_ORDER)), dtype=np.int64)
+
+        amounts = np.array([c.amount_paise for c in cases], dtype=np.int64)
+        retry_counts = np.array([c.retry_count for c in cases], dtype=np.int32)
+
+        for col_idx, act in enumerate(ACTION_ORDER):
+            p_a = batch_probs[act]  # shape (n,)
+            cost = int(ACTION_COSTS_PAISE[act])
+            gross = np.floor(p_a * amounts).astype(np.int64)
+            candidate_net[:, col_idx] = gross - cost
+
+        # Apply safety constraints (disqualified actions get marked with large negative value)
+        # RETRY: disallowed if retry_count >= MAX_RETRY_COUNT_ALLOWED
+        retry_col = ACTION_ORDER.index(RecoveryAction.RETRY)
+        retry_disallowed = retry_counts >= MAX_RETRY_COUNT_ALLOWED
+        candidate_net[retry_disallowed, retry_col] = -999_999_999_999_999
+
+        # ESCALATE: disallowed if amount_paise < MIN_AMOUNT_PAISE_FOR_ESCALATE
+        escalate_col = ACTION_ORDER.index(RecoveryAction.ESCALATE)
+        escalate_disallowed = amounts < MIN_AMOUNT_PAISE_FOR_ESCALATE
+        candidate_net[escalate_disallowed, escalate_col] = -999_999_999_999_999
+
+        # NO_ACTION is always allowed
+
+        # np.argmax returns lowest index in case of ties, matching canonical tie-breaking
+        best_indices = np.argmax(candidate_net, axis=1)
+
+        return [ACTION_ORDER[idx] for idx in best_indices]
+
     def select_action(self, case: PaymentCase) -> RecoveryAction:
         """Convenience method returning the selected RecoveryAction."""
         return self.evaluate_case(case).selected_action

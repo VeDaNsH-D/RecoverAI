@@ -197,11 +197,57 @@ class FeatureExtractor:
     def transform_cases(self, cases: List[PaymentCase]) -> np.ndarray:
         """
         Transforms a batch of PaymentCase objects into a 2D numpy feature matrix (N x D).
+        Directly populates a pre-allocated NumPy buffer for high throughput while preserving
+        exact feature ordering, mathematical transformations, and integrity validations.
         """
         if not cases:
             return np.empty((0, len(self._feature_names)), dtype=np.float64)
 
-        matrix = np.zeros((len(cases), len(self._feature_names)), dtype=np.float64)
+        n = len(cases)
+        d = len(self._feature_names)
+        matrix = np.empty((n, d), dtype=np.float64)
+
         for i, case in enumerate(cases):
-            matrix[i] = self.extract_features_array(case)
+            self.validate_case_integrity(case)
+
+            amt_paise = float(case.amount_paise)
+            amt_inr = amt_paise / 100.0
+            cust_avg_paise = float(case.customer_avg_amount_paise)
+            cust_avg_inr = cust_avg_paise / 100.0
+            succ_rate = float(case.customer_historical_success_rate)
+            tx_count = float(case.customer_total_transactions)
+            tenure = float(case.customer_tenure_months)
+            hours = float(case.hours_since_failure)
+
+            matrix[i, 0] = amt_paise
+            matrix[i, 1] = math.log(1.0 + max(0.0, amt_inr))
+            matrix[i, 2] = succ_rate
+            matrix[i, 3] = 1.0 - succ_rate
+            matrix[i, 4] = tx_count
+            matrix[i, 5] = math.log(1.0 + max(0.0, tx_count))
+            matrix[i, 6] = float(case.customer_total_failures)
+            matrix[i, 7] = cust_avg_paise
+            matrix[i, 8] = math.log(1.0 + max(0.0, cust_avg_inr))
+            matrix[i, 9] = amt_paise / max(100.0, cust_avg_paise)
+            matrix[i, 10] = tenure
+            matrix[i, 11] = math.log(1.0 + max(0.0, tenure))
+            matrix[i, 12] = float(case.retry_count)
+            matrix[i, 13] = hours
+            matrix[i, 14] = math.log(1.0 + max(0.0, hours))
+            matrix[i, 15] = 1.0 if case.is_subscription else 0.0
+
+            # Payment method one-hot
+            pm = case.payment_method
+            matrix[i, 16] = 1.0 if pm == PaymentMethod.UPI else 0.0
+            matrix[i, 17] = 1.0 if pm == PaymentMethod.CARD else 0.0
+            matrix[i, 18] = 1.0 if pm == PaymentMethod.NETBANKING else 0.0
+            matrix[i, 19] = 1.0 if pm == PaymentMethod.MANDATE else 0.0
+
+            # Failure type one-hot
+            ft = case.failure_type
+            matrix[i, 20] = 1.0 if ft == FailureType.TEMPORARY_FAILURE else 0.0
+            matrix[i, 21] = 1.0 if ft == FailureType.INSUFFICIENT_FUNDS else 0.0
+            matrix[i, 22] = 1.0 if ft == FailureType.INVALID_PAYMENT_METHOD else 0.0
+            matrix[i, 23] = 1.0 if ft == FailureType.UNKNOWN_FAILURE else 0.0
+
         return matrix

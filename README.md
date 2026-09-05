@@ -146,7 +146,7 @@ Demonstrates real-time observable inference and auditable decision reports acros
 python scripts/demo.py
 ```
 
-### D. Run Full Test Suite (124+ Tests)
+### D. Run Full Test Suite (128 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
@@ -156,9 +156,18 @@ python -m pytest tests/ -v
 python scripts/diagnose_decision_gap.py
 ```
 
-### F. Run Final Benchmark Evaluation on Held-Out Test Split
+### F. Run Final Benchmark Evaluation on Held-Out Test Split (Mode A)
 ```bash
 python scripts/run_final_test_evaluation.py
+```
+
+### G. Run High-Throughput Scale & Stress Benchmark (Mode B)
+```bash
+# Standard 10,000-case scale benchmark with customer-clustered bootstrap
+python scripts/run_scale_benchmark.py --profile standard --batch-size 1024
+
+# Quick smoke benchmark comparing single-case vs batch vectorized throughput
+python scripts/run_scale_benchmark.py --profile smoke --compare-single-batch
 ```
 
 ---
@@ -192,7 +201,7 @@ recoverai/
 │   ├── observability.py        # In-memory thread-safe operational metrics collector
 │   ├── schemas.py              # Strict closed Pydantic request/response contracts
 │   ├── middleware/             # Request correlation (X-Request-ID) & structured logging
-│   ├── routes/                 # API routers (/health, /ready, /model-info, /decisions, /recovery, /analytics, /observability, /agent)
+│   ├── routes/                 # API routers (/health, /ready, /model-info, /decisions, /recovery, /analytics, /observability, /agent, /webhooks)
 │   └── services/               # RecoveryDecisionService, OperationsService, ExplanationService
 ├── data/
 │   └── sim_v1/                 # Frozen benchmark dataset (Train: 7k, Val: 1.5k, Test: 1.5k)
@@ -208,12 +217,21 @@ recoverai/
 │   ├── ML_SYSTEM.md            # Machine learning decision theory & diagnostics
 │   ├── PRD.md                  # Product requirements & KPI definitions
 │   ├── PRODUCTION_READINESS.md # Production readiness, error envelopes, and correlation architecture
-│   └── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
+│   ├── RAZORPAY_INTEGRATION.md # Razorpay TEST MODE integration, webhooks & reconciliation
+│   ├── RECOVERY_OPERATIONS.md  # Operations lifecycle, state machine, and provider guide
+│   └── SCALE_EVALUATION.md     # Milestone 7 scale evaluation, vectorization & bootstrap framework
 ├── ml/
-│   ├── features.py             # Leakage-safe observable feature extraction (24D)
+│   ├── features.py             # Leakage-safe observable feature extraction (24D preallocated numpy)
 │   ├── dataset.py              # Supervised potential-outcome dataset bundles
-│   ├── decision_engine.py      # Expected net value optimization & safety guardrails
+│   ├── decision_engine.py      # Expected net value optimization, safety guardrails & select_actions_fast
 │   ├── inference.py            # Production inference engine & explanation generator
+│   ├── evaluation/             # Milestone 7 Scale Evaluation & Profiling Package
+│   │   ├── schemas.py          # Strict Pydantic benchmark schemas & latency stats
+│   │   ├── workload.py         # Synthetic scale workload generator with CRN ground truth
+│   │   ├── bootstrap.py        # Customer-clustered bootstrap with empirical 95% CIs
+│   │   ├── profiler.py         # Sub-millisecond stage timing & tracemalloc memory profiler
+│   │   ├── subgroups.py        # Subgroup stress matrix across 6 canonical dimensions
+│   │   └── harness.py          # ScaleBenchmarkHarness unifying pipeline execution
 │   └── models/
 │       ├── base.py             # Abstract BaseRecoveryModel
 │       ├── logistic_model.py   # Calibrated Logistic Regression model
@@ -226,14 +244,18 @@ recoverai/
 │   ├── state_machine.py        # Deterministic state machine & legal transitions
 │   ├── repository.py           # SQLite repository with atomic transactions & busy timeout
 │   ├── executor.py             # Provider dispatcher & registry
-│   └── actions/                # Provider-agnostic action mocks (retry, link, remind, etc.)
+│   ├── actions/                # Provider-agnostic action mocks (retry, link, remind, etc.)
+│   └── providers/              # External payment provider adapters (Razorpay TEST MODE)
 ├── reports/
-│   ├── final_test_evaluation.json  # Reproducible test benchmark results
-│   └── final_test_evaluation.md    # Markdown benchmark report
+│   ├── final_test_evaluation.json  # Reproducible test benchmark results (Mode A)
+│   ├── final_test_evaluation.md    # Markdown benchmark report (Mode A)
+│   ├── m7_scale_benchmark.json     # Milestone 7 scale benchmark results (Mode B)
+│   └── m7_scale_benchmark.md       # Milestone 7 scale benchmark report (Mode B)
 ├── scripts/
 │   ├── demo.py                 # Interactive scenario demonstration CLI
 │   ├── diagnose_decision_gap.py# Decision gap diagnostic & confusion matrices
-│   ├── run_final_test_evaluation.py # Test split evaluation runner
+│   ├── run_final_test_evaluation.py # Mode A frozen test split evaluation runner
+│   ├── run_scale_benchmark.py  # Mode B high-throughput scale benchmark CLI
 │   ├── save_champion_model.py  # Export pre-trained champion model artifact
 │   ├── smoke_test_api.py       # Live HTTP decision smoke test
 │   ├── smoke_test_operations.py# Live HTTP operations lifecycle smoke test
@@ -243,7 +265,7 @@ recoverai/
 │   ├── smoke_test_llm_agent.py # Live HTTP LLM tool-calling agent smoke test
 │   └── validation_decision_comparison.py # Validation comparison runner
 ├── simulator/                  # Frozen causal simulation environment (sim_v1)
-└── tests/                      # 116 unit, integration, security, API, operations, analytics, and LLM agent tests
+└── tests/                      # 128 unit, integration, security, equivalence, bootstrap, and scale tests
 ```
 
 ---

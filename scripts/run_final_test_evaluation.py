@@ -73,8 +73,8 @@ def main():
             "cust_succ": defaultdict(lambda: {"net": 0, "amt": 0, "n": 0, "rec": 0}),
         }
 
-        for case in test_cases:
-            action = action_fn(case)
+        for i, case in enumerate(test_cases):
+            action = action_fn(case, i)
             action_counts[action] += 1
             res = simulator.execute_action(case, action)
 
@@ -132,14 +132,14 @@ def main():
 
     def evaluate_engine_batch_on_test(name, engine):
         dec_results = engine.evaluate_cases(test_cases)
-        return evaluate_policy_on_test(name, lambda c: dec_results[test_cases.index(c)].selected_action)
+        return evaluate_policy_on_test(name, lambda c, i: dec_results[i].selected_action)
 
     print("[*] Running Final Evaluations on TEST Split...")
-    eval_no_action = evaluate_policy_on_test("No Action", lambda c: no_action_policy.predict(c))
-    eval_rule = evaluate_policy_on_test("Rule Baseline", lambda c: rule_policy.predict(c))
+    eval_no_action = evaluate_policy_on_test("No Action", lambda c, i: no_action_policy.predict(c))
+    eval_rule = evaluate_policy_on_test("Rule Baseline", lambda c, i: rule_policy.predict(c))
     eval_logistic = evaluate_engine_batch_on_test("Logistic Decision Engine", logistic_engine)
     eval_gbm = evaluate_engine_batch_on_test("GBM Decision Engine", gbm_engine)
-    eval_oracle = evaluate_policy_on_test("Oracle", lambda c: oracle_policy.predict(c))
+    eval_oracle = evaluate_policy_on_test("Oracle", lambda c, i: oracle_policy.predict(c))
 
     all_evals = [eval_no_action, eval_rule, eval_logistic, eval_gbm, eval_oracle]
     rule_net = eval_rule["net_paise"]

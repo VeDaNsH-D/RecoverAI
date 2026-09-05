@@ -79,3 +79,12 @@ Where:
 | **Logistic Decision Engine (Champion)** | **₹2,946,931.00** | **₹2,972,057.00** | **₹25,126.00** | **+₹241,626.00 (+8.93%)** | **₹56,300.00** | **71.3%** | **100.0%** | **81.1%** |
 | **GBM Decision Engine** | ₹2,831,319.00 | ₹2,859,193.00 | ₹27,874.00 | +₹126,014.00 (+4.66%) | ₹171,912.00 | 69.6% | 100.0% | 42.3% |
 | **Oracle (Benchmark Ceiling)** | ₹3,003,231.00 | ₹3,025,648.00 | ₹22,417.00 | +₹297,926.00 (+11.01%) | ₹0.00 | 72.9% | 88.5% | 100.0% |
+
+---
+
+## 4. Scale & Stress Evaluation (Milestone 7)
+
+For high-throughput evaluation, latency/memory profiling, and customer-clustered bootstrap confidence intervals across large synthetic workloads (1,000 to 500,000+ cases), see:
+
+👉 [**Scale Evaluation & Stress Testing Guide (`docs/SCALE_EVALUATION.md`)**](SCALE_EVALUATION.md)
+

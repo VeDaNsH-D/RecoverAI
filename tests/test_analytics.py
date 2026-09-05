@@ -326,8 +326,13 @@ def test_trends_analytics_and_interval(client):
 
 def test_date_filtering_and_validation(client):
     """Verify date filtering and rejection of invalid date ranges."""
+    from datetime import datetime, timezone, timedelta
+    now_utc = datetime.now(timezone.utc)
+    start_str = (now_utc - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_str = (now_utc + timedelta(days=7)).strftime("%Y-%m-%d")
+
     # Valid date filter
-    resp = client.get("/api/v1/analytics/overview?start_date=2026-08-01&end_date=2026-08-31")
+    resp = client.get(f"/api/v1/analytics/overview?start_date={start_str}&end_date={end_str}")
     assert resp.status_code == 200
     assert resp.json()["total_cases"] >= 4
 
@@ -337,7 +342,7 @@ def test_date_filtering_and_validation(client):
     assert resp_future.json()["total_cases"] == 0
 
     # Invalid date range (start_date > end_date) -> 422
-    resp_bad = client.get("/api/v1/analytics/overview?start_date=2026-08-31&end_date=2026-08-01")
+    resp_bad = client.get(f"/api/v1/analytics/overview?start_date={end_str}&end_date={start_str}")
     assert resp_bad.status_code == 422
     assert "cannot be after" in resp_bad.json()["detail"]
 
